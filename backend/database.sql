@@ -1,0 +1,140 @@
+-- ═══════════════════════════════════════════════════════════
+--  MASTER CALISTHENICS INDIA — DATABASE SCHEMA
+--  Run this file in MySQL Workbench or terminal:
+--  mysql -u root -p < database.sql
+-- ═══════════════════════════════════════════════════════════
+
+CREATE DATABASE IF NOT EXISTS mci_db;
+USE mci_db;
+
+-- ─── Admins ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS admins (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(100) NOT NULL,
+  email       VARCHAR(150) UNIQUE NOT NULL,
+  password    VARCHAR(255) NOT NULL,
+  role        ENUM('superadmin','admin') DEFAULT 'admin',
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─── Trial Bookings ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS bookings (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  name          VARCHAR(100) NOT NULL,
+  phone         VARCHAR(20)  NOT NULL,
+  email         VARCHAR(150),
+  program       VARCHAR(100),
+  session_time  ENUM('morning','evening') NOT NULL,
+  preferred_date DATE,
+  one_week_offer TINYINT(1) DEFAULT 0,
+  message       TEXT,
+  status        ENUM('pending','confirmed','cancelled','completed') DEFAULT 'pending',
+  admin_note    TEXT,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─── Reviews ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS reviews (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(100) NOT NULL,
+  rating      TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  review_text TEXT NOT NULL,
+  program     VARCHAR(100),
+  approved    TINYINT(1) DEFAULT 0,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─── Community Posts ──────────────────────────────────────
+CREATE TABLE IF NOT EXISTS posts (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  author      VARCHAR(100) NOT NULL,
+  title       VARCHAR(200) NOT NULL,
+  content     TEXT NOT NULL,
+  post_type   ENUM('announcement','photo','video','workout') DEFAULT 'announcement',
+  image_url   VARCHAR(500),
+  video_url   VARCHAR(500),
+  likes       INT DEFAULT 0,
+  published   TINYINT(1) DEFAULT 1,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─── Contact Messages ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS contacts (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(100) NOT NULL,
+  email       VARCHAR(150) NOT NULL,
+  phone       VARCHAR(20),
+  message     TEXT NOT NULL,
+  is_read     TINYINT(1) DEFAULT 0,
+  replied     TINYINT(1) DEFAULT 0,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─── Programs (editable from admin) ──────────────────────
+CREATE TABLE IF NOT EXISTS programs (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  title       VARCHAR(150) NOT NULL,
+  subtitle    VARCHAR(200),
+  icon        VARCHAR(10),
+  color       VARCHAR(20) DEFAULT '#f97316',
+  features    JSON,
+  pricing     JSON,
+  is_featured TINYINT(1) DEFAULT 0,
+  sort_order  INT DEFAULT 0,
+  active      TINYINT(1) DEFAULT 1,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─── Gallery ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS gallery (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  caption     VARCHAR(200),
+  image_url   VARCHAR(500) NOT NULL,
+  category    ENUM('training','events','transformations','community') DEFAULT 'training',
+  active      TINYINT(1) DEFAULT 1,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ─── Seed: Default Admin ──────────────────────────────────
+-- Password = MCI@Admin2026  (bcrypt hash — will be replaced on first run by server.js)
+INSERT IGNORE INTO admins (name, email, password, role)
+VALUES ('Super Admin', 'admin@mastercalisthenicsindia.com', 'REPLACE_ON_FIRST_RUN', 'superadmin');
+
+-- ─── Seed: Sample Programs ────────────────────────────────
+INSERT IGNORE INTO programs (id, title, subtitle, icon, color, features, pricing, is_featured, sort_order) VALUES
+(1, 'Group Batch Training', 'Train Together. Grow Stronger.', '🤸', '#f97316',
+  '["Calisthenics & functional fitness","Skill learning (pull-ups, handstands)","Mobility & flexibility sessions","Cardio & HIIT conditioning","Beginners to advanced friendly"]',
+  '[["1 Week (One-time only)","₹499"],["1 Month","₹4,000"],["3 Months","₹12,000"],["6 Months","₹18,000"],["12 Months","₹26,000"]]',
+  0, 1),
+
+(2, 'Personal Training (1-to-1)', 'Personal Attention. Faster Results.', '🎯', '#3b82f6',
+  '["Completely customized plan","Goal-specific (Fat loss, Skills)","Flexible time slots","Technique & form correction","Nutrition guidance included"]',
+  '[["Drop-In","₹1,500"],["4 Sessions","₹5,400"],["8 Sessions","₹9,600"],["12 Sessions","₹13,200"],["16 Sessions","₹16,000"]]',
+  1, 2),
+
+(3, 'Group Personalized', 'Small Group. Big Results.', '💪', '#10b981',
+  '["Small group (2–3 people)","Personalized programming","High accountability","Cost-effective PT alternative"]',
+  '[["3 days/wk Monthly","₹7,999"],["4 days/wk Monthly","₹9,999"],["5 days/wk Monthly","₹11,999"],["3 days/wk Quarterly","₹19,999"],["5 days/wk Quarterly","₹29,999"]]',
+  0, 3),
+
+(4, 'Kids Fitness & Calisthenics', 'Strong Kids. Confident Future.', '🧒', '#a855f7',
+  '["Age Group: 6 to 14 Years","Bodyweight strength & agility","Animal flow & fun games","Sports conditioning","Improved focus & discipline"]',
+  '[["1 Month","₹4,000"],["3 Months","₹6,999"],["6 Months","₹11,499"],["12 Months","₹17,499"]]',
+  0, 4),
+
+(5, "Women's Special Batch", 'Strong • Confident • Healthy', '👩', '#ec4899',
+  '["Mon-Wed-Fri (Evening: 6:15 & 7:30)","Fat loss & toning focus","Safe & comfortable environment","Strength & mobility building","Mix of Skills, HIIT, & Strength"]',
+  '[["1 Month","₹3,000"],["3 Months","₹7,500"],["6 Months","₹12,000"],["1 Year","₹18,000"]]',
+  0, 5);
+
+-- ─── Seed: Sample Reviews ─────────────────────────────────
+INSERT IGNORE INTO reviews (id, name, rating, review_text, program, approved) VALUES
+(1, 'Varun M.', 5, 'In 6 months I went from zero pull-ups to muscle-ups. MCI is genuinely the best investment I have made for my body.', 'Group Batch Training', 1),
+(2, 'Sneha P.', 5, 'The coaches here are phenomenal. Super technical, patient, and motivating. My handstand is almost freestanding!', 'Personal Training', 1),
+(3, 'Deepak R.', 5, 'Lost 12kg and gained real strength. Group sessions are intense but the community keeps you going.', 'Group Batch Training', 1);
+
+-- ─── Seed: Sample Posts ───────────────────────────────────
+INSERT IGNORE INTO posts (id, author, title, content, post_type, likes) VALUES
+(1, 'Coach Arjun', 'Morning Workout — Handstand Progressions', 'Today session focused on wall handstands and kick-ups. Incredible energy from the 6AM batch!', 'workout', 42),
+(2, 'Coach Priya', 'Mobility Sunday Highlights', 'Flexibility is the foundation of every advanced skill. Check out how far our members have come in just 3 months!', 'photo', 31),
+(3, 'Coach Rahul', 'New Batch Starting June 1st!', 'Limited slots available for the June morning batch. DM us to secure your spot. Special early-bird pricing for first 10 members!', 'announcement', 67);
