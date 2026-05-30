@@ -34,6 +34,7 @@ async function unsubscribe(req, res) {
 }
 
 async function sendPostNotification(post) {
+  const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
   try {
     const [subscribers] = await db.query("SELECT email, name FROM subscribers");
     if (!subscribers.length) return;
@@ -54,14 +55,14 @@ async function sendPostNotification(post) {
             <h2 style="color:#f97316;margin-top:0;">${post.title}</h2>
             ${post.image_url ? `<img src="${post.image_url}" style="width:100%;border-radius:12px;margin-bottom:16px;" />` : ""}
             <p style="color:#9ca3af;line-height:1.7;">${post.content}</p>
-            <a href="http://localhost:5173/community" style="display:inline-block;margin-top:20px;background:#f97316;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
+            <a href="${FRONTEND_URL}/community" style="display:inline-block;margin-top:20px;background:#f97316;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">
               View on Website
             </a>
           </div>
           <div style="padding:16px 32px;border-top:1px solid #1f2937;text-align:center;">
             <p style="color:#4b5563;font-size:12px;margin:0;">
               Master Calisthenics India, Mira Road, Mumbai<br/>
-              <a href="http://localhost:5173/unsubscribe" style="color:#4b5563;">Unsubscribe</a>
+              <a href="${FRONTEND_URL}/unsubscribe" style="color:#4b5563;">Unsubscribe</a>
             </p>
           </div>
         </div>

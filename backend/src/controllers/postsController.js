@@ -26,7 +26,8 @@ async function getPosts(req, res) {
 async function createPost(req, res) {
   const { author, title, content, post_type, video_url } = req.body;
   if (!title || !content) return res.status(400).json({ success: false, message: "Title and content required" });
-  const image_url = req.file ? `http://localhost:5000/uploads/${req.file.filename}` : req.body.image_url || null;
+  const BASE_URL = process.env.BACKEND_URL || "http://localhost:5000";
+  const image_url = req.file ? `${BASE_URL}/uploads/${req.file.filename}` : req.body.image_url || null;
   try {
     const [result] = await db.query(
       "INSERT INTO posts (author, title, content, post_type, image_url, video_url) VALUES (?, ?, ?, ?, ?, ?)",

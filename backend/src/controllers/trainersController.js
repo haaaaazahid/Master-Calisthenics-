@@ -25,7 +25,8 @@ async function getAllTrainers(req, res) {
 async function createTrainer(req, res) {
   const { name, role, bio } = req.body;
   if (!name || !role) return res.status(400).json({ success: false, message: "Name and role required" });
-  const image_url = req.file ? `http://localhost:5000/uploads/${req.file.filename}` : null;
+  const BASE_URL = process.env.BACKEND_URL || "http://localhost:5000";
+  const image_url = req.file ? `${BASE_URL}/uploads/${req.file.filename}` : null;
   try {
     const [result] = await db.query(
       "INSERT INTO trainers (name, role, bio, image_url) VALUES (?, ?, ?, ?)",

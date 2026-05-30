@@ -39,7 +39,8 @@ async function deleteFolder(req, res) {
 async function uploadPhoto(req, res) {
   const { folder_id, caption } = req.body;
   if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded" });
-  const image_url = `http://localhost:5000/uploads/${req.file.filename}`;
+  const BASE_URL = process.env.BACKEND_URL || "http://localhost:5000";
+  const image_url = `${BASE_URL}/uploads/${req.file.filename}`;
   try {
     const [result] = await db.query(
       "INSERT INTO gallery_photos (folder_id, image_url, caption) VALUES (?, ?, ?)",
