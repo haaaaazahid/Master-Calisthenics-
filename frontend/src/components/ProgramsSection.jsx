@@ -1,79 +1,161 @@
-const programs = [
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 
-  {
-    title: "Group Batch Training",
-    desc: "Train Together. Grow Stronger.",
-    price: "₹4,000/month",
-  },
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-  {
-    title: "Personal Training",
-    desc: "Personal Attention. Faster Results.",
-    price: "₹9,600/8 sessions",
-  },
-
-  {
-    title: "Group Personalized",
-    desc: "Small Group. Big Results.",
-    price: "₹7,999/month",
-  },
-
-];
+const iconMap = {
+  "Group Batch Training": "🏋️",
+  "Personal Training (1-to-1)": "🎯",
+  "Group Personalized": "👥",
+  "Kids Fitness & Calisthenics": "🧒",
+  "Women's Special Batch": "👩",
+};
 
 const ProgramsSection = () => {
+  const [programs, setPrograms] = useState([]);
+  const [active, setActive]     = useState(null);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    fetch(`${API}/programs`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setPrograms(data.programs.map(p => ({
+            ...p,
+            features: Array.isArray(p.features) ? p.features : JSON.parse(p.features || "[]"),
+            pricing:  Array.isArray(p.pricing)  ? p.pricing  : JSON.parse(p.pricing  || "[]"),
+          })));
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="py-24 px-6 bg-[#0F172A]">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-5xl md:text-7xl text-center mb-16 font-black">OUR PROGRAMS</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {[1,2,3].map(i => (
+              <div key={i} className="bg-[#111827] rounded-[30px] h-80 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
-
-    <section className="py-32 px-6 bg-[#0F172A]">
-
+    <section className="py-24 px-6 bg-[#0F172A]">
       <div className="max-w-7xl mx-auto">
 
-        <h2 className="text-5xl md:text-7xl text-center mb-20">
+        <div className="text-center mb-16">
+          <p className="text-orange-500 uppercase tracking-[0.2em] text-sm font-semibold mb-4">
+            Train With Us
+          </p>
+          <h2 className="text-5xl md:text-7xl font-black">OUR PROGRAMS</h2>
+        </div>
 
-          OUR PROGRAMS
-
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-10">
-
-          {programs.map((program, index) => (
-
+        <div className="grid md:grid-cols-3 gap-8">
+          {programs.map((p, i) => (
             <div
-              key={index}
-              className="bg-[#111827] border border-gray-800 rounded-[30px] p-10 hover:border-orange-500 transition duration-500"
+              key={p.id}
+              className={`bg-[#111827] border rounded-[28px] p-8 flex flex-col transition-all duration-500 hover:-translate-y-1 ${
+                p.is_featured
+                  ? "border-orange-500/50 ring-1 ring-orange-500/20"
+                  : "border-gray-800 hover:border-orange-500/40"
+              }`}
             >
+              {/* Badge */}
+              {p.is_featured && (
+                <span className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full font-semibold mb-4 self-start">
+                  ⭐ Most Popular
+                </span>
+              )}
 
-              <h3 className="text-3xl mb-6 text-orange-500">
-
-                {program.title}
-
-              </h3>
-
-              <p className="text-gray-400 leading-8 mb-10">
-
-                {program.desc}
-
-              </p>
-
-              <div className="text-4xl font-bold mb-10">
-
-                {program.price}
-
+              {/* Icon + Title */}
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ backgroundColor: p.color ? `${p.color}20` : "#f9731620" }}
+                >
+                  {iconMap[p.title] || "🏋️"}
+                </div>
+                <div>
+                  <h3 className="text-xl font-black leading-tight" style={{ color: p.color || "#f97316" }}>
+                    {p.title}
+                  </h3>
+                  <p className="text-gray-500 text-xs mt-0.5">{p.subtitle}</p>
+                </div>
               </div>
 
-              <button className="w-full bg-orange-500 hover:bg-orange-600 transition py-4 rounded-2xl text-black font-bold">
+              {/* Features */}
+              <ul className="space-y-2 mb-6 flex-1">
+                {p.features.slice(0, 5).map((f, j) => (
+                  <li key={j} className="flex items-start gap-2 text-gray-400 text-sm">
+                    <span className="text-orange-500 text-xs mt-0.5 shrink-0">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
 
-                JOIN NOW
+              {/* Pricing toggle */}
+              <div className="border-t border-gray-800 pt-5">
+                {active === p.id ? (
+                  <div className="space-y-2 mb-4">
+                    {p.pricing.map(([label, price], j) => (
+                      <div
+                        key={j}
+                        className={`flex justify-between items-center px-3 py-2 rounded-xl text-sm ${
+                          j === 0
+                            ? "bg-orange-500/10 border border-orange-500/30"
+                            : "bg-[#0B0F19] border border-gray-800"
+                        }`}
+                      >
+                        <span className={j === 0 ? "text-orange-300 font-medium" : "text-gray-400"}>
+                          {label}
+                        </span>
+                        <span className={`font-bold ${j === 0 ? "text-orange-400" : "text-white"}`}>
+                          {price}
+                        </span>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => setActive(null)}
+                      className="text-xs text-gray-500 hover:text-gray-300 transition w-full text-center mt-1"
+                    >
+                      Hide pricing ↑
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setActive(p.id)}
+                    className="w-full text-sm text-orange-400 border border-orange-500/30 py-2 rounded-xl hover:bg-orange-500/10 transition mb-4"
+                  >
+                    View Pricing ↓
+                  </button>
+                )}
 
-              </button>
-
+                <Link to="/contact">
+                  <button className="w-full bg-orange-500 hover:bg-orange-600 transition py-3 rounded-2xl text-white font-bold">
+                    Book Trial
+                  </button>
+                </Link>
+              </div>
             </div>
-
           ))}
+        </div>
 
+        <div className="text-center mt-12">
+          <Link to="/programs">
+            <button className="border border-gray-700 hover:border-orange-500 hover:text-orange-400 transition px-10 py-4 rounded-2xl text-gray-400 font-medium">
+              View All Programs & Pricing →
+            </button>
+          </Link>
         </div>
 
       </div>
-
     </section>
   );
 };
