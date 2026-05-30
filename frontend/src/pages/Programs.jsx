@@ -140,8 +140,8 @@ export default function Programs() {
                   </div>
 
                   {/* Pricing */}
-                  {(active === p.id || p.is_featured) && p.pricing.length > 0 && (
-                    <div>
+{p.pricing.length > 0 && (
+                      <div>
                       <h3 className="text-sm uppercase tracking-wider text-gray-500 mb-4 font-semibold">Pricing</h3>
                       <div className="space-y-2">
                         {p.pricing.map(([label, price], j) => (
@@ -167,12 +167,7 @@ export default function Programs() {
 
                   {active !== p.id && !p.is_featured && (
                     <div className="flex items-center justify-center">
-                      <button
-                        onClick={() => setActive(p.id)}
-                        className="text-orange-400 border border-orange-500/30 px-6 py-3 rounded-xl hover:bg-orange-500/10 transition text-sm"
-                      >
-                        Show Pricing →
-                      </button>
+                     
                     </div>
                   )}
                 </div>
