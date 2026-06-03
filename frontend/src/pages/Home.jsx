@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import heroImage from "../assets/hero.jpg";
+import heroImage from "../public/hero.jpg";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 

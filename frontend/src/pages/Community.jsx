@@ -62,7 +62,7 @@ export default function Community() {
       {/* HERO */}
       <section
         className="h-[70vh] bg-cover bg-center relative flex items-center justify-center"
-        style={{ backgroundImage: "url('/src/assets/community.jpg')" }}
+        style={{ backgroundImage: "url('/community.jpg')" }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-[#050816]" />
         <div className="relative z-10 text-center px-6">
