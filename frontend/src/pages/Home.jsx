@@ -361,8 +361,7 @@ export default function Home() {
                       <span key={j} className="text-gray-700">★</span>
                     ))}
                   </div>
-                  <p className="text-gray-300 leading-8 italic mb-6">"{r.review}"</p>
-                  <div className="border-t border-gray-800 pt-5 flex items-center gap-3">
+<p className="text-gray-300 leading-8 italic mb-6">"{r.review_text || r.review}"</p>                  <div className="border-t border-gray-800 pt-5 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold">
                       {r.name.charAt(0)}
                     </div>
