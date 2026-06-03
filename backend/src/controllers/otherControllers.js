@@ -84,8 +84,7 @@ async function getDashboard(req, res) {
     const [[{ pending_bookings }]]     = await db.query("SELECT COUNT(*) AS pending_bookings FROM bookings WHERE status='pending'");
     const [[{ confirmed_bookings }]]   = await db.query("SELECT COUNT(*) AS confirmed_bookings FROM bookings WHERE status='confirmed'");
     const [[{ total_reviews }]]        = await db.query("SELECT COUNT(*) AS total_reviews FROM reviews");
-    const [[{ pending_reviews }]]      = await db.query("SELECT COUNT(*) AS pending_reviews FROM reviews WHERE status='pending'");
-    const [[{ total_contacts }]]       = await db.query("SELECT COUNT(*) AS total_contacts FROM contacts");
+    const [[{ pending_reviews }]] = await db.query("SELECT COUNT(*) AS pending_reviews FROM reviews WHERE approved=0");    const [[{ total_contacts }]]       = await db.query("SELECT COUNT(*) AS total_contacts FROM contacts");
     const [[{ unread_contacts }]]      = await db.query("SELECT COUNT(*) AS unread_contacts FROM contacts WHERE is_read=0");
     const [[{ total_posts }]]          = await db.query("SELECT COUNT(*) AS total_posts FROM posts");
 
