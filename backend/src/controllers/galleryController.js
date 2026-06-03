@@ -1,11 +1,23 @@
-const db     = require("../config/db");
-const multer = require("multer");
-const path   = require("path");
+const db         = require("../config/db");
+const multer     = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename:    (req, file, cb) => cb(null, `gallery-${Date.now()}${path.extname(file.originalname)}`),
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:          "mci/gallery",
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "gif"],
+    transformation:  [{ width: 1200, crop: "limit" }],
+  },
+});
+
 const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
 
 async function getFolders(req, res) {
@@ -39,7 +51,9 @@ async function deleteFolder(req, res) {
 async function uploadPhoto(req, res) {
   const { folder_id, caption } = req.body;
   if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded" });
-  const image_url = `https://master-calisthenics-production.up.railway.app/uploads/${req.file.filename}`;
+
+  const image_url = req.file.path;
+
   try {
     const [result] = await db.query(
       "INSERT INTO gallery_photos (folder_id, image_url, caption) VALUES (?, ?, ?)",

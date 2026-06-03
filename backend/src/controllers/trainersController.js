@@ -1,11 +1,23 @@
-const db     = require("../config/db");
-const multer = require("multer");
-const path   = require("path");
+const db         = require("../config/db");
+const multer     = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename:    (req, file, cb) => cb(null, `trainer-${Date.now()}${path.extname(file.originalname)}`),
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:          "mci/trainers",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation:  [{ width: 600, height: 600, crop: "fill", gravity: "face" }],
+  },
+});
+
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 async function getTrainers(req, res) {
@@ -24,10 +36,11 @@ async function getAllTrainers(req, res) {
 
 async function createTrainer(req, res) {
   const { name, role, bio } = req.body;
-  if (!name || !role) return res.status(400).json({ success: false, message: "Name and role required" });
-  const image_url = req.file 
-  ? `https://master-calisthenics-production.up.railway.app/uploads/${req.file.filename}` 
-  : null;
+  if (!name || !role)
+    return res.status(400).json({ success: false, message: "Name and role required" });
+
+  const image_url = req.file ? req.file.path : null;
+
   try {
     const [result] = await db.query(
       "INSERT INTO trainers (name, role, bio, image_url) VALUES (?, ?, ?, ?)",
