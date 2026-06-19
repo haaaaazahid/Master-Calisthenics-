@@ -5,7 +5,7 @@ const auth    = require("../middleware/auth");
 const { login, googleLogin, me, changePassword }                             = require("../controllers/authController");
 const { createBooking, getAllBookings, updateBookingStatus, deleteBooking }   = require("../controllers/bookingsController");
 const { submitReview, getApprovedReviews, getAllReviews, approveReview, rejectReview, deleteReview } = require("../controllers/reviewsController");
-const { getPosts, createPost, deletePost, togglePost, likePost, upload }     = require("../controllers/postsController");
+const { getPosts, getAllPosts, createPost, deletePost, togglePost, likePost, upload } = require("../controllers/postsController");
 const { submitContact, getAllContacts, markRead, deleteContact,
         getPrograms, updateProgram, getDashboard }                            = require("../controllers/otherControllers");
 const { getTrainers, getAllTrainers, createTrainer, deleteTrainer,
@@ -45,6 +45,7 @@ router.patch ("/admin/reviews/:id/approve",    auth, approveReview);
 router.patch ("/admin/reviews/:id/reject",     auth, rejectReview);
 router.delete("/admin/reviews/:id",            auth, deleteReview);
 
+router.get   ("/admin/posts",                  auth, getAllPosts);
 router.post  ("/admin/posts",                  auth, upload.single("image"), createPost);
 router.delete("/admin/posts/:id",              auth, deletePost);
 router.patch ("/admin/posts/:id/toggle",       auth, togglePost);
