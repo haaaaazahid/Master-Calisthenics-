@@ -36,6 +36,18 @@ export default function Admin() {
   const [trainers, setTrainers] = useState([]);
   const [gallery, setGallery]   = useState([]);
   const [loading, setLoading]   = useState(false);
+  // Booking search & filters
+const [bookingSearch, setBookingSearch] = useState("");
+const [bookingStatus, setBookingStatus] = useState("");
+
+// Contact search & filters
+const [contactSearch, setContactSearch] = useState("");
+const [contactReadFilter, setContactReadFilter] = useState("all");
+
+// Booking pagination
+const [bookingTotal, setBookingTotal] = useState(0);
+const [bookingPage, setBookingPage] = useState(1);
+const [bookingTotalPages, setBookingTotalPages] = useState(1);
 
   // New post form
   const [newPost, setNewPost] = useState({ title: "", content: "", author: "", post_type: "announcement", video_url: "", imageFile: null, preview: null });
@@ -77,7 +89,30 @@ export default function Admin() {
     setLoading(true);
     const loaders = {
       dashboard: () => apiFetch("/admin/dashboard", { headers: jsonH() }).then(d => { if (d.success) setDash(d); }),
-      bookings:  () => apiFetch("/admin/bookings",  { headers: jsonH() }).then(d => { if (d.success) setBookings(d.bookings); }),
+bookings: () => {
+  const params = new URLSearchParams();
+
+  if (bookingSearch.trim()) {
+    params.set("search", bookingSearch.trim());
+  }
+
+  if (bookingStatus) {
+    params.set("status", bookingStatus);
+  }
+
+  params.set("page", bookingPage);
+  params.set("limit", 20);
+
+  return apiFetch(`/admin/bookings?${params.toString()}`, {
+    headers: jsonH(),
+  }).then(d => {
+    if (d.success) {
+      setBookings(d.bookings || []);
+      setBookingTotal(d.total || 0);
+      setBookingTotalPages(d.totalPages || 1);
+    }
+  });
+},
       reviews:   () => apiFetch("/admin/reviews",   { headers: jsonH() }).then(d => { if (d.success) setReviews(d.reviews); }),
       posts:     () => apiFetch("/admin/posts", { headers: jsonH() }).catch(() => apiFetch("/posts")).then(d => { if (d.success) setPosts(d.posts || []); }),
       contacts:  () => apiFetch("/admin/contacts",  { headers: jsonH() }).then(d => { if (d.success) setContacts(d.contacts); }),
@@ -85,8 +120,7 @@ export default function Admin() {
       gallery:   () => apiFetch("/admin/gallery",   { headers: jsonH() }).then(d => { if (d.success) setGallery(d.folders); }),
     };
     (loaders[tab] || loaders.dashboard)().finally(() => setLoading(false));
-  }, [tab, token]);
-
+}, [tab, token, bookingSearch, bookingStatus, bookingPage]);
   /* ── Auth ── */
   async function handleLogin(e) {
     e.preventDefault();
@@ -238,6 +272,21 @@ export default function Admin() {
     setPwMsg({ type: data.success ? "success" : "error", text: data.message });
     if (data.success) setPwForm({ current: "", newPw: "", confirm: "" });
   }
+
+  // Client-side contact filtering (the contacts endpoint already returns the full admin list).
+  const filteredContacts = contacts.filter((c) => {
+    const q = contactSearch.trim().toLowerCase();
+    const matchesSearch = !q || [c.name, c.email, c.phone, c.message, c.subject]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(q));
+
+    const matchesRead =
+      contactReadFilter === "all" ||
+      (contactReadFilter === "unread" && !Number(c.is_read)) ||
+      (contactReadFilter === "read" && Number(c.is_read));
+
+    return matchesSearch && matchesRead;
+  });
 
   /* ─────────── LOGIN SCREEN ─────────── */
   if (!token) {
@@ -518,8 +567,51 @@ export default function Admin() {
           {tab === "bookings" && (
             <div>
               <h2 className="text-2xl font-black mb-8">BOOKINGS</h2>
+
+              {/* Booking search + filters */}
+              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-4 mb-6">
+                <div className="flex flex-col lg:flex-row gap-3">
+                  <div className="flex-1 relative">
+                    <input
+                      type="search"
+                      value={bookingSearch}
+                      onChange={(e) => { setBookingSearch(e.target.value); setBookingPage(1); }}
+                      placeholder="Search name, phone, email, program..."
+                      className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 pl-11 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                    />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                  </div>
+
+                  <select
+                    value={bookingStatus}
+                    onChange={(e) => { setBookingStatus(e.target.value); setBookingPage(1); }}
+                    className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition"
+                  >
+                    <option value="">All Status</option>
+                    <option value="New">New</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+
+                  {(bookingSearch || bookingStatus) && (
+                    <button
+                      type="button"
+                      onClick={() => { setBookingSearch(""); setBookingStatus(""); setBookingPage(1); }}
+                      className="border border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-400 px-5 py-3 rounded-xl transition text-sm"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="mt-3 text-xs text-gray-500">
+                  Showing {bookings.length} of {bookingTotal} booking{bookingTotal !== 1 ? "s" : ""}
+                </div>
+              </div>
+
               {loading ? <div className="animate-pulse space-y-3">{[1,2,3].map(i => <div key={i} className="bg-[#111827] h-24 rounded-2xl" />)}</div> :
-              bookings.length === 0 ? <p className="text-gray-600 text-center py-16">No bookings yet.</p> :
+              bookings.length === 0 ? <p className="text-gray-600 text-center py-16">No bookings match your search.</p> :
               <div className="space-y-4">
                 {bookings.map(b => (
                   <div key={b.id} className="bg-[#111827] border border-gray-800 rounded-2xl p-5">
@@ -556,6 +648,31 @@ export default function Admin() {
                   </div>
                 ))}
               </div>}
+
+              {/* Booking pagination */}
+              {bookingTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 mt-6">
+                  <button
+                    type="button"
+                    disabled={bookingPage <= 1}
+                    onClick={() => setBookingPage((p) => Math.max(1, p - 1))}
+                    className="px-4 py-2 rounded-xl border border-gray-700 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500 transition"
+                  >
+                    ← Previous
+                  </button>
+                  <span className="text-sm text-gray-400">
+                    Page {bookingPage} of {bookingTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={bookingPage >= bookingTotalPages}
+                    onClick={() => setBookingPage((p) => Math.min(bookingTotalPages, p + 1))}
+                    className="px-4 py-2 rounded-xl border border-gray-700 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500 transition"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -608,10 +725,50 @@ export default function Admin() {
           {tab === "contacts" && (
             <div>
               <h2 className="text-2xl font-black mb-8">MESSAGES</h2>
+
+              {/* Contact search + read filter */}
+              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-4 mb-6">
+                <div className="flex flex-col lg:flex-row gap-3">
+                  <div className="flex-1 relative">
+                    <input
+                      type="search"
+                      value={contactSearch}
+                      onChange={(e) => setContactSearch(e.target.value)}
+                      placeholder="Search name, email, phone, message..."
+                      className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 pl-11 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                    />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                  </div>
+
+                  <select
+                    value={contactReadFilter}
+                    onChange={(e) => setContactReadFilter(e.target.value)}
+                    className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition"
+                  >
+                    <option value="all">All Messages</option>
+                    <option value="unread">Unread</option>
+                    <option value="read">Read</option>
+                  </select>
+
+                  {(contactSearch || contactReadFilter !== "all") && (
+                    <button
+                      type="button"
+                      onClick={() => { setContactSearch(""); setContactReadFilter("all"); }}
+                      className="border border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-400 px-5 py-3 rounded-xl transition text-sm"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="mt-3 text-xs text-gray-500">
+                  Showing {filteredContacts.length} of {contacts.length} message{contacts.length !== 1 ? "s" : ""}
+                </div>
+              </div>
+
               {loading ? <div className="animate-pulse space-y-3">{[1,2].map(i => <div key={i} className="bg-[#111827] h-24 rounded-2xl" />)}</div> :
-              contacts.length === 0 ? <p className="text-gray-600 text-center py-16">No messages yet.</p> :
+              filteredContacts.length === 0 ? <p className="text-gray-600 text-center py-16">No messages match your search.</p> :
               <div className="space-y-4">
-                {contacts.map(c => (
+                {filteredContacts.map(c => (
                   <div key={c.id} className={`bg-[#111827] border rounded-2xl p-5 ${c.is_read ? "border-gray-800" : "border-orange-500/30"}`}>
                     <div className="flex items-start justify-between flex-wrap gap-3">
                       <div>
