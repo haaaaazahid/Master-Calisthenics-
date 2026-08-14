@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { apiGet } from "../api";
-
+import { apiGet } from "../api/api.js";
 const iconMap = {
   "Group Batch Training": "🏋️",
   "Personal Training (1-to-1)": "🎯",
