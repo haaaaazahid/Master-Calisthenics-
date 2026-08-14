@@ -1,176 +1,420 @@
-const API = import.meta.env.VITE_API_URL;
-function getToken() {
-  return localStorage.getItem("mci_token") || "";
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://script.google.com/macros/s/AKfycbwqo1tAmNyNU5E4Mdkrngn8o8S8NUa8n67Dg2frCMSwGkeQApNGswFfaYz01WV-8g23lQ/exec";
+
+/* =========================================================
+   BUILD GOOGLE APPS SCRIPT URL
+   ========================================================= */
+
+function buildUrl(path) {
+  const cleanPath = path.replace(/^\/+/, "");
+
+  // Example:
+  // /admin/bookings -> bookings
+  // /admin/contacts -> contacts
+  // /bookings       -> bookings
+  // /contact        -> contact
+
+  const action = cleanPath
+    .replace(/^admin\//, "")
+    .split("?")[0]
+    .replace(/\/+$/, "");
+
+  const query = cleanPath.includes("?")
+    ? cleanPath.split("?")[1]
+    : "";
+
+  const url = new URL(API);
+
+  url.searchParams.set("action", action);
+
+  if (query) {
+    const params = new URLSearchParams(query);
+
+    params.forEach((value, key) => {
+      url.searchParams.set(key, value);
+    });
+  }
+
+  return url.toString();
 }
 
-function authHeaders() {
-  return {
-    Authorization: `Bearer ${getToken()}`,
-  };
+
+/* =========================================================
+   GET
+   ========================================================= */
+
+export async function apiGet(path) {
+  const url = buildUrl(path);
+
+  const response = await fetch(url, {
+    method: "GET",
+    redirect: "follow",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  return response.json();
 }
 
-function jsonHeaders() {
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${getToken()}`,
-  };
-}
 
-// ─── Programs ────────────────────────────────────────────
-export async function fetchPrograms() {
-  const res = await fetch(`${BASE}/programs`);
-  return res.json();
-}
+/* =========================================================
+   POST
+   ========================================================= */
 
-// ─── Reviews ─────────────────────────────────────────────
-export async function fetchReviews() {
-  const res = await fetch(`${BASE}/reviews`);
-  return res.json();
-}
+export async function apiPost(path, data = {}) {
+  const url = buildUrl(path);
 
-export async function submitReview(data) {
-  const res = await fetch(`${BASE}/reviews`, {
+  const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+
+    // IMPORTANT:
+    // Do NOT change this to application/json.
+    // text/plain avoids Google's OPTIONS preflight problem.
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8",
+    },
+
     body: JSON.stringify(data),
+    redirect: "follow",
   });
-  return res.json();
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  return response.json();
 }
 
-// ─── Posts ───────────────────────────────────────────────
-export async function fetchPosts() {
-  const res = await fetch(`${BASE}/posts`);
-  return res.json();
-}
 
-export async function likePost(id) {
-  const res = await fetch(`${BASE}/posts/${id}/like`, { method: "PATCH" });
-  return res.json();
-}
+/* =========================================================
+   PATCH
+   Apps Script receives this as POST + _method=PATCH
+   ========================================================= */
 
-// ─── Bookings ────────────────────────────────────────────
-export async function submitBooking(data) {
-  const res = await fetch(`${BASE}/bookings`, {
+export async function apiPatch(path, data = {}) {
+  const url = buildUrl(path);
+
+  const finalUrl = new URL(url);
+
+  finalUrl.searchParams.set("_method", "PATCH");
+
+  const response = await fetch(finalUrl.toString(), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8",
+    },
+
     body: JSON.stringify(data),
+    redirect: "follow",
   });
-  return res.json();
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  return response.json();
 }
 
-// ─── Contact ─────────────────────────────────────────────
-export async function submitContact(data) {
-  const res = await fetch(`${BASE}/contact`, {
+
+/* =========================================================
+   DELETE
+   Apps Script receives this as POST + _method=DELETE
+   ========================================================= */
+
+export async function apiDelete(path) {
+  const url = buildUrl(path);
+
+  const finalUrl = new URL(url);
+
+  finalUrl.searchParams.set("_method", "DELETE");
+
+  const response = await fetch(finalUrl.toString(), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8",
+    },
+
+    body: JSON.stringify({}),
+    redirect: "follow",
   });
-  return res.json();
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  return response.json();
 }
 
-// ─── Admin: Posts ─────────────────────────────────────────
-export async function adminCreatePost(formData) {
-  const res = await fetch(`${BASE}/admin/posts`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: formData,
+
+/* =========================================================
+   COMPATIBILITY WRAPPER
+   Existing Admin.jsx can continue using apiFetch()
+   ========================================================= */
+
+export async function apiFetch(path, options = {}) {
+  const method = (options.method || "GET").toUpperCase();
+
+  let data = {};
+
+  if (options.body) {
+    try {
+      data =
+        typeof options.body === "string"
+          ? JSON.parse(options.body)
+          : options.body;
+    } catch {
+      data = {};
+    }
+  }
+
+  if (method === "GET") {
+    return apiGet(path);
+  }
+
+  if (method === "POST") {
+    return apiPost(path, data);
+  }
+
+  if (method === "PATCH") {
+    return apiPatch(path, data);
+  }
+
+  if (method === "DELETE") {
+    return apiDelete(path);
+  }
+
+  throw new Error(`Unsupported method: ${method}`);
+}
+
+
+/* =========================================================
+   PUBLIC API
+   ========================================================= */
+
+export const submitBooking = (data) =>
+  apiPost("/bookings", data);
+
+export const submitContact = (data) =>
+  apiPost("/contact", data);
+
+export const getPrograms = () =>
+  apiGet("/programs");
+
+export const getReviews = () =>
+  apiGet("/reviews");
+
+export const submitReview = (data) =>
+  apiPost("/reviews", data);
+
+export const getPosts = () =>
+  apiGet("/posts");
+
+export const likePost = (id) =>
+  apiPatch(`/posts/${id}/like`, {});
+
+export const getTrainers = () =>
+  apiGet("/trainers");
+
+export const getGallery = () =>
+  apiGet("/gallery");
+
+export const subscribe = (email) =>
+  apiPost("/subscribe", { email });
+
+export const unsubscribe = (email) =>
+  apiPost("/unsubscribe", { email });
+
+
+/* =========================================================
+   ADMIN — AUTH
+   ========================================================= */
+
+export const adminLogin = (data) =>
+  apiPost("/auth/login", data);
+
+export const adminMe = () =>
+  apiGet("/auth/me");
+
+export const adminChangePassword = (data) =>
+  apiPost("/auth/change-password", data);
+
+
+/* =========================================================
+   ADMIN — DASHBOARD
+   ========================================================= */
+
+export const adminDashboard = () =>
+  apiGet("/admin/dashboard");
+
+
+/* =========================================================
+   ADMIN — BOOKINGS
+   ========================================================= */
+
+/*
+  Supports:
+
+  adminBookings()
+
+  adminBookings({
+    search: "zahid"
+  })
+
+  adminBookings({
+    status: "pending"
+  })
+
+  adminBookings({
+    search: "9865",
+    status: "confirmed",
+    page: 1,
+    limit: 20
+  })
+*/
+
+export const adminBookings = (params = {}) => {
+  const cleanParams = {};
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+    ) {
+      cleanParams[key] = value;
+    }
   });
-  return res.json();
-}
 
-export async function adminTogglePost(id) {
-  const res = await fetch(`${BASE}/admin/posts/${id}/toggle`, {
-    method: "PATCH",
-    headers: jsonHeaders(),
+  const query = new URLSearchParams(cleanParams).toString();
+
+  return apiGet(
+    `/admin/bookings${query ? `?${query}` : ""}`
+  );
+};
+
+
+export const adminUpdateBooking = (id, data) =>
+  apiPatch(`/admin/bookings/${id}`, data);
+
+
+export const adminDeleteBooking = (id) =>
+  apiDelete(`/admin/bookings/${id}`);
+
+
+/* =========================================================
+   ADMIN — CONTACTS
+   ========================================================= */
+
+/*
+  Supports:
+
+  adminContacts()
+
+  adminContacts({
+    search: "zahid"
+  })
+
+  adminContacts({
+    search: "gmail.com",
+    read: "unread"
+  })
+*/
+
+export const adminContacts = (params = {}) => {
+  const cleanParams = {};
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+    ) {
+      cleanParams[key] = value;
+    }
   });
-  return res.json();
-}
 
-export async function adminDeletePost(id) {
-  const res = await fetch(`${BASE}/admin/posts/${id}`, {
-    method: "DELETE",
-    headers: jsonHeaders(),
-  });
-  return res.json();
-}
+  const query = new URLSearchParams(cleanParams).toString();
 
-// ─── Admin: Bookings ──────────────────────────────────────
-export async function adminFetchBookings() {
-  const res = await fetch(`${BASE}/admin/bookings`, { headers: jsonHeaders() });
-  return res.json();
-}
+  return apiGet(
+    `/admin/contacts${query ? `?${query}` : ""}`
+  );
+};
 
-export async function adminUpdateBooking(id, data) {
-  const res = await fetch(`${BASE}/admin/bookings/${id}`, {
-    method: "PATCH",
-    headers: jsonHeaders(),
-    body: JSON.stringify(data),
-  });
-  return res.json();
-}
 
-export async function adminDeleteBooking(id) {
-  const res = await fetch(`${BASE}/admin/bookings/${id}`, {
-    method: "DELETE",
-    headers: jsonHeaders(),
-  });
-  return res.json();
-}
+export const adminMarkContactRead = (id) =>
+  apiPatch(`/admin/contacts/${id}/read`, {});
 
-// ─── Admin: Reviews ───────────────────────────────────────
-export async function adminFetchReviews() {
-  const res = await fetch(`${BASE}/admin/reviews`, { headers: jsonHeaders() });
-  return res.json();
-}
 
-export async function adminApproveReview(id) {
-  const res = await fetch(`${BASE}/admin/reviews/${id}/approve`, {
-    method: "PATCH",
-    headers: jsonHeaders(),
-  });
-  return res.json();
-}
+export const adminDeleteContact = (id) =>
+  apiDelete(`/admin/contacts/${id}`);
 
-export async function adminRejectReview(id) {
-  const res = await fetch(`${BASE}/admin/reviews/${id}/reject`, {
-    method: "PATCH",
-    headers: jsonHeaders(),
-  });
-  return res.json();
-}
 
-export async function adminDeleteReview(id) {
-  const res = await fetch(`${BASE}/admin/reviews/${id}`, {
-    method: "DELETE",
-    headers: jsonHeaders(),
-  });
-  return res.json();
-}
+/* =========================================================
+   ADMIN — REVIEWS
+   ========================================================= */
 
-// ─── Admin: Contacts ──────────────────────────────────────
-export async function adminFetchContacts() {
-  const res = await fetch(`${BASE}/admin/contacts`, { headers: jsonHeaders() });
-  return res.json();
-}
+export const adminReviews = () =>
+  apiGet("/admin/reviews");
 
-export async function adminMarkRead(id) {
-  const res = await fetch(`${BASE}/admin/contacts/${id}/read`, {
-    method: "PATCH",
-    headers: jsonHeaders(),
-  });
-  return res.json();
-}
+export const adminApproveReview = (id) =>
+  apiPatch(`/admin/reviews/${id}/approve`, {});
 
-export async function adminDeleteContact(id) {
-  const res = await fetch(`${BASE}/admin/contacts/${id}`, {
-    method: "DELETE",
-    headers: jsonHeaders(),
-  });
-  return res.json();
-}
+export const adminRejectReview = (id) =>
+  apiPatch(`/admin/reviews/${id}/reject`, {});
 
-// ─── Admin: Dashboard ─────────────────────────────────────
-export async function adminFetchDashboard() {
-  const res = await fetch(`${BASE}/admin/dashboard`, { headers: jsonHeaders() });
-  return res.json();
-}
+export const adminDeleteReview = (id) =>
+  apiDelete(`/admin/reviews/${id}`);
+
+
+/* =========================================================
+   ADMIN — POSTS
+   ========================================================= */
+
+export const adminPosts = () =>
+  apiGet("/admin/posts");
+
+export const adminDeletePost = (id) =>
+  apiDelete(`/admin/posts/${id}`);
+
+export const adminTogglePost = (id) =>
+  apiPatch(`/admin/posts/${id}/toggle`, {});
+
+
+/* =========================================================
+   ADMIN — PROGRAMS
+   ========================================================= */
+
+export const adminPrograms = () =>
+  apiGet("/programs");
+
+export const adminUpdateProgram = (id, data) =>
+  apiPatch(`/admin/programs/${id}`, data);
+
+
+/* =========================================================
+   ADMIN — TRAINERS
+   ========================================================= */
+
+export const adminTrainers = () =>
+  apiGet("/admin/trainers");
+
+
+/* =========================================================
+   ADMIN — GALLERY
+   ========================================================= */
+
+export const adminGallery = () =>
+  apiGet("/admin/gallery");
+
+
+/* =========================================================
+   ADMIN — SUBSCRIBERS
+   ========================================================= */
+
+export const adminSubscribers = () =>
+  apiGet("/admin/subscribers");
