@@ -1,6 +1,28 @@
 import { useState, useEffect } from "react";
 import { getGallery } from "../api/api.js";
 
+// Your Gallery sheet is flat (id, caption, image_url, category, active,
+// created_at) — there's no folder concept in code.gs. We group by
+// `category` client-side to reconstruct the folder tabs this page expects.
+const CATEGORY_LABELS = {
+  training: "Training",
+  events: "Events",
+  transformations: "Transformations",
+  community: "Community",
+};
+
+function groupByCategory(items) {
+  const map = {};
+  items.forEach(item => {
+    const key = item.category || "training";
+    if (!map[key]) {
+      map[key] = { id: key, name: CATEGORY_LABELS[key] || key, photos: [] };
+    }
+    map[key].photos.push(item);
+  });
+  return Object.values(map);
+}
+
 export default function Gallery() {
   const [folders, setFolders]         = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -11,7 +33,12 @@ export default function Gallery() {
     getGallery()
       .then(data => {
         if (data.success) {
-          const withPhotos = data.folders.filter(f => f.photos && f.photos.length > 0);
+          const items = Array.isArray(data.gallery)
+            ? data.gallery
+            : Array.isArray(data.data)
+            ? data.data
+            : [];
+          const withPhotos = groupByCategory(items).filter(f => f.photos.length > 0);
           setFolders(withPhotos);
           if (withPhotos.length > 0) setActiveFolder(withPhotos[0].id);
         }
