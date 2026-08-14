@@ -43,11 +43,30 @@ function buildUrl(path) {
 /* =========================================================
    GET
    ========================================================= */
-
 export async function apiGet(path) {
-  const url = buildUrl(path);
+  const cleanPath = path.replace(/^\/+/, "");
 
-  const response = await fetch(url, {
+  const action = cleanPath
+    .replace(/^admin\//, "")
+    .split("?")[0];
+
+  const query = cleanPath.includes("?")
+    ? cleanPath.split("?")[1]
+    : "";
+
+  const url = new URL(API);
+
+  url.searchParams.set("action", action);
+
+  if (query) {
+    const params = new URLSearchParams(query);
+
+    params.forEach((value, key) => {
+      url.searchParams.set(key, value);
+    });
+  }
+
+  const response = await fetch(url.toString(), {
     method: "GET",
     redirect: "follow",
   });
@@ -58,8 +77,6 @@ export async function apiGet(path) {
 
   return response.json();
 }
-
-
 /* =========================================================
    POST
    ========================================================= */
