@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://script.google.com/macros/s/AKfycbwqo1tAmNyNU5E4Mdkrngn8o8S8NUa8n67Dg2frCMSwGkeQApNGswFfaYz01WV-8g23lQ/exec";
 const GOOGLE_CLIENT_ID = "884795861510-pf6h5obqhf35cjpfq3ebicqg75f53kbm.apps.googleusercontent.com";
 
 /* ─── helpers ─────────────────────────────────────────── */

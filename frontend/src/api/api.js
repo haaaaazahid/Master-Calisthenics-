@@ -240,8 +240,8 @@ export const getTrainers = () =>
 export const getGallery = () =>
   apiGet("/gallery");
 
-export const subscribe = (email) =>
-  apiPost("/subscribe", { email });
+export const subscribe = (email, name = "") =>
+  apiPost("/subscribe", { email, name });
 
 export const unsubscribe = (email) =>
   apiPost("/unsubscribe", { email });

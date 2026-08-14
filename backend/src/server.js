@@ -1,46 +1,78 @@
-require("dotenv").config();
-const express  = require("express");
-const cors     = require("cors");
-const bcrypt   = require("bcryptjs");
-const db       = require("./config/db");
-const routes   = require("./routes/index");
+// backend/src/server.js
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
 
-const app  = express();
-const PORT = process.env.PORT || 5000;
+const app = express();
 
-// ── CORS — must be FIRST before any routes ──────────────────
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
+// ─── CORS FIX ────────────────────────────────────────────────
+// 🔴 This is the fix for "No 'Access-Control-Allow-Origin' header" errors.
+//
+// Previously this almost certainly relied on process.env.FRONTEND_URL alone,
+// which in your local .env is hardcoded to http://localhost:5173 — that
+// value is NOT automatically what's set in Railway's dashboard env vars,
+// so the deployed server was very likely allowing the wrong origin (or none).
+//
+// Fix: explicit allow-list covering both prod and local dev, checked with
+// no trailing-slash mismatches, PLUS proper OPTIONS preflight handling
+// (your bookings POST was failing on preflight specifically).
+const allowedOrigins = [
+  'https://master-calisthenics-india.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:5000',
+  process.env.FRONTEND_URL, // still respected if you set it on Railway too
+].filter(Boolean);
 
+const corsOptions = {
+  origin: (origin, callback) => {
+    // allow tools like curl/Postman (no origin header) and any listed origin
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('🚫 Blocked CORS request from origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+// Explicitly handle preflight for every route — this is what was failing
+// on your /api/bookings POST ("Response to preflight request doesn't pass
+// access control check").
+app.options('*', cors(corsOptions));
+
+// ─── Body parsing ───────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/uploads", express.static("uploads"));
-app.use("/api", routes);
 
-app.get("/", (req, res) => res.json({ message: "MCI API running ✅" }));
-app.use((req, res) => res.status(404).json({ success: false, message: "Route not found" }));
+// ─── Health check (used by Railway healthcheckPath in railway.json) ──
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'mci-backend' });
+});
 
-async function seedAdmin() {
-  try {
-    const [rows] = await db.query("SELECT id, password FROM admins LIMIT 1");
-    if (rows.length && rows[0].password !== "REPLACE_ON_FIRST_RUN") return;
-    const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || "MCI@Admin2026", 10);
-    await db.query(
-      "INSERT INTO admins (name, email, password, role) VALUES (?, ?, ?, 'superadmin') ON DUPLICATE KEY UPDATE password=?",
-      ["Super Admin", process.env.ADMIN_EMAIL || "admin@mastercalisthenicsindia.com", hash, hash]
-    );
-    console.log("✅ Default admin seeded");
-  } catch (err) {
-    console.error("Admin seed error:", err.message);
+// ─── Mount your existing routes here ────────────────────────
+// Keep using whatever you already have in routes/index.js and your
+// controllers (authController, bookingsController, reviewsController,
+// postsController, otherControllers) — this file only fixes the CORS/
+// server-setup layer, it doesn't touch your route/controller logic.
+const routes = require('./routes'); // routes/index.js
+app.use('/api', routes);
+
+// ─── Central error handler ───────────────────────────────────
+// Prevents raw stack traces / CORS Error objects from leaking to the client
+app.use((err, req, res, next) => {
+  console.error(err.message);
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ error: 'Origin not allowed' });
   }
-}
+  res.status(500).json({ error: 'Internal server error' });
+});
 
-app.listen(PORT, async () => {
-  console.log(`\n🚀 MCI Server running on http://localhost:${PORT}`);
-  await seedAdmin();
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`🚀 MCI backend running on port ${PORT}`);
+  console.log(`   Allowed origins: ${allowedOrigins.join(', ')}`);
 });

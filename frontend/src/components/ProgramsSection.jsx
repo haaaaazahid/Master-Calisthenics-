@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { getPrograms } from "../api/api.js";
 
 const iconMap = {
   "Group Batch Training": "🏋️",
@@ -17,8 +16,7 @@ const ProgramsSection = () => {
   const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    fetch(`${API}/programs`)
-      .then(r => r.json())
+    getPrograms()
       .then(data => {
         if (data.success) {
           setPrograms(data.programs.map(p => ({
@@ -28,6 +26,7 @@ const ProgramsSection = () => {
           })));
         }
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -68,7 +67,7 @@ const ProgramsSection = () => {
               }`}
             >
               {/* Badge */}
-              {p.is_featured && (
+              {Boolean(p.is_featured) && (
                 <span className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full font-semibold mb-4 self-start">
                   ⭐ Most Popular
                 </span>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { getPosts, likePost, subscribe } from "../api/api.js";
 
 const typeColors = {
   announcement: { bg: "bg-blue-500/20", text: "text-blue-400", label: "📢 Announcement" },
@@ -23,17 +22,21 @@ export default function Community() {
   const [subLoading, setSubLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/posts`)
-      .then(r => r.json())
+    getPosts()
       .then(data => { if (data.success) setPosts(data.posts); })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   async function handleLike(id) {
     if (liked[id]) return;
-    await fetch(`${API}/posts/${id}/like`, { method: "PATCH" });
-    setLiked(p => ({ ...p, [id]: true }));
-    setPosts(p => p.map(post => post.id === id ? { ...post, likes: post.likes + 1 } : post));
+    try {
+      await likePost(id);
+      setLiked(p => ({ ...p, [id]: true }));
+      setPosts(p => p.map(post => post.id === id ? { ...post, likes: post.likes + 1 } : post));
+    } catch {
+      // silently ignore — likes are non-critical
+    }
   }
 
   async function handleSubscribe(e) {
@@ -41,12 +44,7 @@ export default function Community() {
     if (!subEmail) return;
     setSubLoading(true);
     try {
-      const res = await fetch(`${API}/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: subEmail, name: subName }),
-      });
-      const data = await res.json();
+      const data = await subscribe(subEmail, subName);
       setSubStatus(data.success ? "success" : "error");
       if (data.success) { setSubEmail(""); setSubName(""); }
     } catch {

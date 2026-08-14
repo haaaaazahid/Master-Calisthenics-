@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { getGallery } from "../api/api.js";
 
 export default function Gallery() {
   const [folders, setFolders]         = useState([]);
@@ -9,8 +8,7 @@ export default function Gallery() {
   const [lightbox, setLightbox]       = useState(null); // {url, caption}
 
   useEffect(() => {
-    fetch(`${API}/gallery`)
-      .then(r => r.json())
+    getGallery()
       .then(data => {
         if (data.success) {
           const withPhotos = data.folders.filter(f => f.photos && f.photos.length > 0);
@@ -18,6 +16,7 @@ export default function Gallery() {
           if (withPhotos.length > 0) setActiveFolder(withPhotos[0].id);
         }
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
