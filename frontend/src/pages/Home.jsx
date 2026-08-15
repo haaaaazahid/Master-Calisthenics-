@@ -2,7 +2,35 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import heroImage from "../assets/hero.jpg";
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { getPrograms, getPosts, getReviews, getTrainers } from "../api/api.js";
+
+// Real coach photos — imported so Vite bundles them into the build.
+// (These live in src/assets/trainers/, NOT backend/uploads — that folder
+// never ships to Vercel.)
+import coachAman   from "../assets/trainers/coach-aman.jpeg";
+import coachHeaven from "../assets/trainers/coach-heaven.jpeg";
+import coachKabir  from "../assets/trainers/coach-kabir.jpeg";
+import coachKunal  from "../assets/trainers/coach-kunal.jpeg";
+import coachMartin from "../assets/trainers/coach-martin.jpeg";
+
+// TEMPORARY hardcoded trainer list — swap this out once the Trainers sheet
+// in Google Apps Script is actually populated and `getTrainers()` returns
+// real data (see the `trainers.length > 0` check below, which already
+// prefers API data automatically the moment it exists).
+const FALLBACK_TRAINERS = [
+  { name: "Founder Vaibhav", role: "Founder & Head Coach", image: null },
+  { name: "Coach Kunal",     role: "Calisthenics Coach",   image: coachKunal },
+  { name: "Coach Bali",      role: "Calisthenics Coach",   image: null },
+  { name: "Coach Aman",      role: "Calisthenics Coach",   image: coachAman },
+  { name: "Coach Martin",    role: "Calisthenics Coach",   image: coachMartin },
+  { name: "Coach Aryan",     role: "Calisthenics Coach",   image: null },
+  { name: "Coach Kabir",     role: "Calisthenics Coach",   image: coachKabir },
+  { name: "Coach Vedant",    role: "Calisthenics Coach",   image: null },
+  { name: "Coach Vedang",    role: "Calisthenics Coach",   image: null },
+  { name: "Coach Heaven",    role: "Calisthenics Coach",   image: coachHeaven },
+  { name: "Coach Sunny",     role: "Calisthenics Coach",   image: null },
+  { name: "Coach Zahid",     role: "Calisthenics Coach",   image: null },
+];
 
 const typeColors = {
   announcement: "bg-blue-500/20 text-blue-400",
@@ -18,10 +46,15 @@ export default function Home() {
   const [trainers, setTrainers] = useState([]);
 
   useEffect(() => {
-    fetch(`${API}/programs`).then(r => r.json()).then(d => { if (d.success) setPrograms(d.programs.slice(0, 3)); });
-    fetch(`${API}/posts`).then(r => r.json()).then(d => { if (d.success) setPosts(d.posts.slice(0, 3)); });
-    fetch(`${API}/reviews`).then(r => r.json()).then(d => { if (d.success) setReviews(d.reviews.slice(0, 3)); });
-    fetch(`${API}/trainers`).then(r => r.json()).then(d => { if (d.success) setTrainers(d.trainers); }).catch(() => {});
+    // safeArray: never trust an API response to have the exact shape we
+    // expect — Google Sheets/Apps Script can return success:true with a
+    // missing/renamed field, and that must never crash the page.
+    const safeArray = (v) => (Array.isArray(v) ? v : []);
+
+    getPrograms().then(d => setPrograms(safeArray(d?.programs).slice(0, 3))).catch(() => {});
+    getPosts().then(d => setPosts(safeArray(d?.posts).slice(0, 3))).catch(() => {});
+    getReviews().then(d => setReviews(safeArray(d?.reviews).slice(0, 3))).catch(() => {});
+    getTrainers().then(d => setTrainers(safeArray(d?.trainers))).catch(() => {});
   }, []);
 
   function formatDate(d) {
@@ -82,7 +115,6 @@ export default function Home() {
             </Link>
           </motion.div>
         </div>
-        {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce opacity-50">
           <div className="w-0.5 h-8 bg-white/40 rounded-full" />
           <div className="text-xs text-white/40 uppercase tracking-widest">Scroll</div>
@@ -183,7 +215,7 @@ export default function Home() {
                 viewport={{ once: true }}
                 className={`bg-[#111827] border rounded-[28px] p-8 hover:border-orange-500/60 transition-all duration-500 hover:-translate-y-1 ${p.is_featured ? "border-orange-500/40 ring-1 ring-orange-500/20" : "border-gray-800"}`}
               >
-                {p.is_featured && (
+                {Boolean(p.is_featured) && (
                   <span className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full font-semibold mb-4 inline-block">
                     ⭐ Most Popular
                   </span>
@@ -218,7 +250,6 @@ export default function Home() {
                 </Link>
               </motion.div>
             )) : (
-              // Fallback static cards
               [
                 { title: "Group Batch Training", subtitle: "Train Together. Grow Stronger.", from: "₹4,000/month", features: ["Calisthenics & functional fitness", "Skill learning (pull-ups, handstands)", "Beginners to advanced friendly"] },
                 { title: "Personal Training", subtitle: "Personal Attention. Faster Results.", from: "₹9,600/8 sessions", features: ["Completely customized plan", "Goal-specific training", "Nutrition guidance included"], featured: true },
@@ -247,40 +278,55 @@ export default function Home() {
           <p className="text-orange-500 uppercase tracking-[0.2em] text-sm mb-3 text-center">Meet the Team</p>
           <h2 className="text-5xl md:text-6xl font-black text-center mb-16">OUR TRAINERS</h2>
           <div className="grid md:grid-cols-3 gap-10">
-            {trainers.length > 0 ? trainers.map((t, i) => (
-              <motion.div
-                key={t.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                viewport={{ once: true }}
-                className="bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden hover:border-orange-500/40 transition-all hover:-translate-y-1 group"
-              >
-                {t.image_url ? (
-                  <img src={t.image_url} alt={t.name} className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500" />
-                ) : (
-                  <div className="h-72 bg-gradient-to-br from-orange-500/20 to-orange-900/20 flex items-center justify-center">
-                    <span className="text-8xl opacity-30">👤</span>
-                  </div>
-                )}
-                <div className="p-7">
-                  <h3 className="text-2xl font-bold text-orange-400">{t.name}</h3>
-                  <p className="text-gray-400 mt-1 text-sm">{t.role}</p>
-                  {t.bio && <p className="text-gray-500 mt-3 text-sm leading-relaxed">{t.bio}</p>}
-                </div>
-              </motion.div>
-            )) : (
-              // Fallback placeholders
-              ["Coach Bali", "Coach Aman", "Coach Aryan"].map((name, i) => (
-                <div key={i} className="bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden hover:border-orange-500/40 transition-all">
-                  <div className="h-72 bg-gradient-to-br from-orange-500/20 to-orange-900/20 flex items-center justify-center">
-                    <span className="text-8xl opacity-30">👤</span>
-                  </div>
+            {trainers.length > 0 ? (
+              // Real API data — automatically takes over once your Trainers
+              // sheet is populated, no code change needed.
+              trainers.map((t, i) => (
+                <motion.div
+                  key={t.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  viewport={{ once: true }}
+                  className="bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden hover:border-orange-500/40 transition-all hover:-translate-y-1 group"
+                >
+                  {t.image_url ? (
+                    <img src={t.image_url} alt={t.name} className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="h-72 bg-gradient-to-br from-orange-500/20 to-orange-900/20 flex items-center justify-center">
+                      <span className="text-8xl opacity-30">👤</span>
+                    </div>
+                  )}
                   <div className="p-7">
-                    <h3 className="text-2xl font-bold text-orange-400">{name}</h3>
-                    <p className="text-gray-400 mt-1 text-sm">Calisthenics Coach</p>
+                    <h3 className="text-2xl font-bold text-orange-400">{t.name}</h3>
+                    <p className="text-gray-400 mt-1 text-sm">{t.role}</p>
+                    {t.bio && <p className="text-gray-500 mt-3 text-sm leading-relaxed">{t.bio}</p>}
                   </div>
-                </div>
+                </motion.div>
+              ))
+            ) : (
+              // Hardcoded fallback with real names + real photos where available
+              FALLBACK_TRAINERS.map((t, i) => (
+                <motion.div
+                  key={t.name}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  viewport={{ once: true }}
+                  className="bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden hover:border-orange-500/40 transition-all hover:-translate-y-1 group"
+                >
+                  {t.image ? (
+                    <img src={t.image} alt={t.name} className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ) : (
+                    <div className="h-72 bg-gradient-to-br from-orange-500/20 to-orange-900/20 flex items-center justify-center">
+                      <span className="text-8xl opacity-30">👤</span>
+                    </div>
+                  )}
+                  <div className="p-7">
+                    <h3 className="text-2xl font-bold text-orange-400">{t.name}</h3>
+                    <p className="text-gray-400 mt-1 text-sm">{t.role}</p>
+                  </div>
+                </motion.div>
               ))
             )}
           </div>
@@ -361,9 +407,10 @@ export default function Home() {
                       <span key={j} className="text-gray-700">★</span>
                     ))}
                   </div>
-                    <p className="text-gray-300 leading-8 italic mb-6">"{r.review_text || r.review}"</p>                  <div className="border-t border-gray-800 pt-5 flex items-center gap-3">
+                  <p className="text-gray-300 leading-8 italic mb-6">"{r.review_text || r.review}"</p>
+                  <div className="border-t border-gray-800 pt-5 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold">
-                      {r.name.charAt(0)}
+                      {String(r.name || "?").charAt(0)}
                     </div>
                     <div>
                       <p className="font-semibold text-white">{r.name}</p>
