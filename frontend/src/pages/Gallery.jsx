@@ -50,7 +50,7 @@ export default function Gallery() {
   const currentFolder = folders.find(f => f.id === activeFolder);
 
   return (
-    <main className="bg-[#050816] text-white min-h-screen">
+    <main className="bg-bg text-text min-h-screen">
 
       {/* HERO */}
       <section className="pt-36 pb-16 px-6 text-center relative overflow-hidden">
@@ -59,7 +59,7 @@ export default function Gallery() {
           MCI In Action
         </p>
         <h1 className="text-6xl md:text-8xl font-black mb-6">GALLERY</h1>
-        <p className="text-gray-400 text-lg max-w-xl mx-auto">
+        <p className="text-text-muted text-lg max-w-xl mx-auto">
           Real moments from our training sessions, competitions, and community events.
         </p>
       </section>
@@ -68,12 +68,12 @@ export default function Gallery() {
         <div className="max-w-6xl mx-auto px-6 pb-24">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="aspect-square bg-[#111827] rounded-2xl animate-pulse" />
+              <div key={i} className="aspect-square bg-surface rounded-2xl animate-pulse" />
             ))}
           </div>
         </div>
       ) : folders.length === 0 ? (
-        <div className="text-center py-32 text-gray-600">
+        <div className="text-center py-32 text-text-muted">
           <div className="text-6xl mb-4">🖼️</div>
           <p className="text-xl">Gallery coming soon!</p>
           <p className="text-sm mt-2">Check back after our next session.</p>
@@ -90,7 +90,7 @@ export default function Gallery() {
                   className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
                     activeFolder === folder.id
                       ? "bg-orange-500 text-white shadow-lg shadow-orange-500/30"
-                      : "bg-[#111827] text-gray-400 border border-gray-700 hover:border-orange-500/50 hover:text-white"
+                      : "bg-surface text-text-muted border border-border hover:border-orange-500/50 hover:text-accent"
                   }`}
                 >
                   {folder.name}
@@ -105,8 +105,8 @@ export default function Gallery() {
             {currentFolder && (
               <>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-white">{currentFolder.name}</h2>
-                  <span className="text-gray-500 text-sm">{currentFolder.photos.length} photos</span>
+                  <h2 className="text-2xl font-bold text-text">{currentFolder.name}</h2>
+                  <span className="text-text-muted text-sm">{currentFolder.photos.length} photos</span>
                 </div>
                 <div className="columns-2 md:columns-3 gap-4 space-y-4">
                   {currentFolder.photos.map(photo => (
@@ -153,7 +153,7 @@ export default function Gallery() {
               className="w-full max-h-[85vh] object-contain rounded-2xl"
             />
             {lightbox.caption && (
-              <p className="text-gray-300 text-center mt-4">{lightbox.caption}</p>
+              <p className="text-text-muted text-center mt-4">{lightbox.caption}</p>
             )}
           </div>
         </div>

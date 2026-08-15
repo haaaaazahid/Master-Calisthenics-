@@ -293,22 +293,22 @@ bookings: () => {
   /* ─────────── LOGIN SCREEN ─────────── */
   if (!token) {
     return (
-      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-bg flex items-center justify-center px-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
             <h1 className="text-4xl font-black mb-2"><span className="text-orange-500">MCI</span> Coach Access</h1>
-            <p className="text-gray-500 text-sm">Sign in to manage your gym</p>
+            <p className="text-text-muted text-sm">Sign in to manage your gym</p>
           </div>
 
-          <div className="bg-[#111827] border border-gray-800 rounded-3xl p-8">
+          <div className="bg-surface border border-border rounded-3xl p-8">
             <form onSubmit={handleLogin} className="space-y-4 mb-6">
               <input
                 type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required
-                className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition text-sm"
+                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition text-sm"
               />
               <input
                 type="password" placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} required
-                className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition text-sm"
+                className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition text-sm"
               />
               {loginErr && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2">{loginErr}</p>}
               <button
@@ -320,9 +320,9 @@ bookings: () => {
             </form>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex-1 h-px bg-gray-700" />
-              <span className="text-gray-500 text-xs">or</span>
-              <div className="flex-1 h-px bg-gray-700" />
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-text-muted text-xs">or</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
 
             <div className="flex justify-center">
@@ -347,15 +347,15 @@ bookings: () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0E1A] text-white">
+    <div className="min-h-screen bg-bg text-text">
 
       {/* TOP BAR */}
-      <div className="bg-[#111827] border-b border-gray-800 px-6 py-4 flex justify-between items-center sticky top-0 z-40">
+      <div className="bg-surface border-b border-border px-6 py-4 flex justify-between items-center sticky top-0 z-40">
         <div>
           <h1 className="text-xl font-black text-orange-500">MCI COACH ACCESS</h1>
-          <p className="text-xs text-gray-500">Welcome, {admin?.name}</p>
+          <p className="text-xs text-text-muted">Welcome, {admin?.name}</p>
         </div>
-        <button onClick={logout} className="text-sm text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-4 py-2 rounded-xl transition">
+        <button onClick={logout} className="text-sm text-text-muted hover:text-accent border border-border hover:border-gold/40 px-4 py-2 rounded-xl transition">
           Logout
         </button>
       </div>
@@ -363,7 +363,7 @@ bookings: () => {
       <div className="flex min-h-[calc(100vh-65px)]">
 
         {/* SIDEBAR */}
-        <aside className="w-56 bg-[#111827] border-r border-gray-800 py-6 flex-shrink-0 hidden md:flex flex-col">
+        <aside className="w-56 bg-surface border-r border-border py-6 flex-shrink-0 hidden md:flex flex-col">
           {tabs.map(t => (
             <button
               key={t.id}
@@ -371,7 +371,7 @@ bookings: () => {
               className={`flex items-center gap-3 px-5 py-3.5 text-sm font-medium transition-all ${
                 tab === t.id
                   ? "text-orange-400 bg-orange-500/10 border-r-2 border-orange-500"
-                  : "text-gray-400 hover:text-white hover:bg-white/5"
+                  : "text-text-muted hover:text-accent hover:bg-white/5"
               }`}
             >
               <span>{t.icon}</span>
@@ -381,13 +381,13 @@ bookings: () => {
         </aside>
 
         {/* MOBILE TABS */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111827] border-t border-gray-800 flex overflow-x-auto z-40 px-2 py-2 gap-1">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t border-border flex overflow-x-auto z-40 px-2 py-2 gap-1">
           {tabs.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition ${
-                tab === t.id ? "text-orange-400 bg-orange-500/10" : "text-gray-500"
+                tab === t.id ? "text-orange-400 bg-orange-500/10" : "text-text-muted"
               }`}
             >
               <span className="text-lg">{t.icon}</span>
@@ -412,44 +412,44 @@ bookings: () => {
                       { label: "Pending Reviews", value: dash.stats.pending_reviews  },
                       { label: "Unread Messages", value: dash.stats.unread_contacts  },
                     ].map((s, i) => (
-                      <div key={i} className="bg-[#111827] border border-gray-800 rounded-2xl p-6">
-                        <p className="text-gray-500 text-sm mb-2">{s.label}</p>
+                      <div key={i} className="bg-surface border border-border rounded-2xl p-6">
+                        <p className="text-text-muted text-sm mb-2">{s.label}</p>
                         <p className="text-4xl font-black text-orange-400">{s.value}</p>
                       </div>
                     ))}
                   </div>
                   <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6">
-                      <h3 className="font-bold mb-4 uppercase text-xs tracking-wider text-gray-400">Recent Bookings</h3>
+                    <div className="bg-surface border border-border rounded-2xl p-6">
+                      <h3 className="font-bold mb-4 uppercase text-xs tracking-wider text-text-muted">Recent Bookings</h3>
                       {dash.recent_bookings?.length ? dash.recent_bookings.map(b => (
-                        <div key={b.id} className="flex justify-between items-center py-3 border-b border-gray-800 last:border-0">
+                        <div key={b.id} className="flex justify-between items-center py-3 border-b border-border last:border-0">
                           <div>
                             <p className="font-medium text-sm">{b.name}</p>
-                            <p className="text-xs text-gray-500">{b.session_time} · {b.program}</p>
+                            <p className="text-xs text-text-muted">{b.session_time} · {b.program}</p>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[b.status] || "bg-gray-500/20 text-gray-400"}`}>
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[b.status] || "bg-gray-500/20 text-text-muted"}`}>
                             {b.status}
                           </span>
                         </div>
-                      )) : <p className="text-gray-600 text-sm">No bookings yet</p>}
+                      )) : <p className="text-text-muted text-sm">No bookings yet</p>}
                     </div>
-                    <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6">
-                      <h3 className="font-bold mb-4 uppercase text-xs tracking-wider text-gray-400">Recent Messages</h3>
+                    <div className="bg-surface border border-border rounded-2xl p-6">
+                      <h3 className="font-bold mb-4 uppercase text-xs tracking-wider text-text-muted">Recent Messages</h3>
                       {dash.recent_contacts?.length ? dash.recent_contacts.map(c => (
-                        <div key={c.id} className="py-3 border-b border-gray-800 last:border-0">
+                        <div key={c.id} className="py-3 border-b border-border last:border-0">
                           <div className="flex justify-between">
                             <p className="font-medium text-sm">{c.name}</p>
                             {!c.is_read && <span className="text-xs text-orange-400 bg-orange-500/10 px-2 rounded-full">new</span>}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{c.message}</p>
+                          <p className="text-xs text-text-muted mt-1 line-clamp-2">{c.message}</p>
                         </div>
-                      )) : <p className="text-gray-600 text-sm">No messages yet</p>}
+                      )) : <p className="text-text-muted text-sm">No messages yet</p>}
                     </div>
                   </div>
                 </>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[1,2,3,4].map(i => <div key={i} className="bg-[#111827] rounded-2xl h-28 animate-pulse" />)}
+                  {[1,2,3,4].map(i => <div key={i} className="bg-surface rounded-2xl h-28 animate-pulse" />)}
                 </div>
               )}
             </div>
@@ -461,30 +461,30 @@ bookings: () => {
               <h2 className="text-2xl font-black mb-8">POSTS</h2>
 
               {/* Create Post */}
-              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 mb-8">
+              <div className="bg-surface border border-border rounded-2xl p-6 mb-8">
                 <h3 className="font-bold mb-5 text-orange-400">Create New Post</h3>
                 <form onSubmit={createPost} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <input
                       type="text" placeholder="Title *" value={newPost.title}
                       onChange={e => setNewPost(p => ({ ...p, title: e.target.value }))} required
-                      className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                      className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
                     <input
                       type="text" placeholder="Author name" value={newPost.author}
                       onChange={e => setNewPost(p => ({ ...p, author: e.target.value }))}
-                      className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                      className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
                   </div>
                   <textarea
                     rows={4} placeholder="Post content *" value={newPost.content}
                     onChange={e => setNewPost(p => ({ ...p, content: e.target.value }))} required
-                    className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition resize-none"
+                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition resize-none"
                   />
                   <div className="grid md:grid-cols-2 gap-4">
                     <select
                       value={newPost.post_type} onChange={e => setNewPost(p => ({ ...p, post_type: e.target.value }))}
-                      className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition"
+                      className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text focus:outline-none focus:border-orange-500 transition"
                     >
                       <option value="announcement">📢 Announcement</option>
                       <option value="workout">💪 Workout</option>
@@ -494,14 +494,14 @@ bookings: () => {
                     <input
                       type="text" placeholder="YouTube URL (optional)" value={newPost.video_url}
                       onChange={e => setNewPost(p => ({ ...p, video_url: e.target.value }))}
-                      className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                      className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
                   </div>
 
                   {/* Image Upload */}
                   <div
                     onClick={() => document.getElementById("post-image-input").click()}
-                    className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition ${newPost.preview ? "border-orange-500/40 bg-orange-500/5" : "border-gray-700 hover:border-orange-500/40 hover:bg-orange-500/5"}`}
+                    className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition ${newPost.preview ? "border-orange-500/40 bg-orange-500/5" : "border-border hover:border-orange-500/40 hover:bg-orange-500/5"}`}
                   >
                     <input
                       id="post-image-input" type="file" accept="image/*" className="hidden"
@@ -517,8 +517,8 @@ bookings: () => {
                       </div>
                     ) : (
                       <>
-                        <p className="text-gray-500 text-sm">📷 Click to upload a photo</p>
-                        <p className="text-gray-600 text-xs mt-1">JPG, PNG, WebP up to 10MB</p>
+                        <p className="text-text-muted text-sm">📷 Click to upload a photo</p>
+                        <p className="text-text-muted text-xs mt-1">JPG, PNG, WebP up to 10MB</p>
                       </>
                     )}
                   </div>
@@ -534,10 +534,10 @@ bookings: () => {
 
               {/* Post List */}
               <div className="space-y-4">
-                {loading ? <div className="bg-[#111827] rounded-2xl h-32 animate-pulse" /> :
-                posts.length === 0 ? <p className="text-gray-600 text-center py-12">No posts yet. Create your first post above!</p> :
+                {loading ? <div className="bg-surface rounded-2xl h-32 animate-pulse" /> :
+                posts.length === 0 ? <p className="text-text-muted text-center py-12">No posts yet. Create your first post above!</p> :
                 posts.map(post => (
-                  <div key={post.id} className="bg-[#111827] border border-gray-800 rounded-2xl p-5 flex gap-4">
+                  <div key={post.id} className="bg-surface border border-border rounded-2xl p-5 flex gap-4">
                     {post.image_url && (
                       <img src={post.image_url} alt="" className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
                     )}
@@ -545,10 +545,10 @@ bookings: () => {
                       <div className="flex items-start justify-between gap-2 flex-wrap">
                         <div>
                           <h4 className="font-bold leading-snug">{post.title}</h4>
-                          <p className="text-xs text-gray-500 mt-0.5">{post.author} · {post.post_type}</p>
+                          <p className="text-xs text-text-muted mt-0.5">{post.author} · {post.post_type}</p>
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={() => togglePost(post.id)} className={`text-xs px-3 py-1.5 rounded-xl font-medium transition ${post.published ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-gray-500/20 text-gray-400 hover:bg-gray-500/30"}`}>
+                          <button onClick={() => togglePost(post.id)} className={`text-xs px-3 py-1.5 rounded-xl font-medium transition ${post.published ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-gray-500/20 text-text-muted hover:bg-gray-500/30"}`}>
                             {post.published ? "Published" : "Hidden"}
                           </button>
                           <button onClick={() => deletePost(post.id)} className="text-xs px-3 py-1.5 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition font-medium">
@@ -556,8 +556,8 @@ bookings: () => {
                           </button>
                         </div>
                       </div>
-                      <p className="text-gray-500 text-xs mt-2 line-clamp-2">{post.content}</p>
-                      <p className="text-xs text-gray-600 mt-1">❤️ {post.likes} likes</p>
+                      <p className="text-text-muted text-xs mt-2 line-clamp-2">{post.content}</p>
+                      <p className="text-xs text-text-muted mt-1">❤️ {post.likes} likes</p>
                     </div>
                   </div>
                 ))}
@@ -571,7 +571,7 @@ bookings: () => {
               <h2 className="text-2xl font-black mb-8">BOOKINGS</h2>
 
               {/* Booking search + filters */}
-              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-4 mb-6">
+              <div className="bg-surface border border-border rounded-2xl p-4 mb-6">
                 <div className="flex flex-col lg:flex-row gap-3">
                   <div className="flex-1 relative">
                     <input
@@ -579,15 +579,15 @@ bookings: () => {
                       value={bookingSearch}
                       onChange={(e) => { setBookingSearch(e.target.value); setBookingPage(1); }}
                       placeholder="Search name, phone, email, program..."
-                      className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 pl-11 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                      className="w-full bg-bg border border-border rounded-xl px-4 py-3 pl-11 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">🔍</span>
                   </div>
 
                   <select
                     value={bookingStatus}
                     onChange={(e) => { setBookingStatus(e.target.value); setBookingPage(1); }}
-                    className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition"
+                    className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text focus:outline-none focus:border-orange-500 transition"
                   >
                     <option value="">All Status</option>
                     <option value="New">New</option>
@@ -601,26 +601,26 @@ bookings: () => {
                     <button
                       type="button"
                       onClick={() => { setBookingSearch(""); setBookingStatus(""); setBookingPage(1); }}
-                      className="border border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-400 px-5 py-3 rounded-xl transition text-sm"
+                      className="border border-border text-text-muted hover:border-orange-500 hover:text-orange-400 px-5 py-3 rounded-xl transition text-sm"
                     >
                       Clear
                     </button>
                   )}
                 </div>
-                <div className="mt-3 text-xs text-gray-500">
+                <div className="mt-3 text-xs text-text-muted">
                   Showing {bookings.length} of {bookingTotal} booking{bookingTotal !== 1 ? "s" : ""}
                 </div>
               </div>
 
-              {loading ? <div className="animate-pulse space-y-3">{[1,2,3].map(i => <div key={i} className="bg-[#111827] h-24 rounded-2xl" />)}</div> :
-              bookings.length === 0 ? <p className="text-gray-600 text-center py-16">No bookings match your search.</p> :
+              {loading ? <div className="animate-pulse space-y-3">{[1,2,3].map(i => <div key={i} className="bg-surface h-24 rounded-2xl" />)}</div> :
+              bookings.length === 0 ? <p className="text-text-muted text-center py-16">No bookings match your search.</p> :
               <div className="space-y-4">
                 {bookings.map(b => (
-                  <div key={b.id} className="bg-[#111827] border border-gray-800 rounded-2xl p-5">
+                  <div key={b.id} className="bg-surface border border-border rounded-2xl p-5">
                     <div className="flex items-start justify-between flex-wrap gap-3">
                       <div>
                         <p className="font-bold text-lg">{b.name}</p>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-400">
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-text-muted">
                           <span>📞 {b.phone}</span>
                           {b.email && <span>✉️ {b.email}</span>}
                           <span>⏰ {b.session_time}</span>
@@ -628,10 +628,10 @@ bookings: () => {
                           {b.preferred_date && <span>📅 {b.preferred_date}</span>}
                           {b.one_week_offer ? <span className="text-orange-400">1-Week Trial ₹499</span> : null}
                         </div>
-                        {b.message && <p className="text-gray-500 text-sm mt-2 italic">"{b.message}"</p>}
+                        {b.message && <p className="text-text-muted text-sm mt-2 italic">"{b.message}"</p>}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${statusColor[b.status] || "bg-gray-500/20 text-gray-400"}`}>
+                        <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${statusColor[b.status] || "bg-gray-500/20 text-text-muted"}`}>
                           {b.status}
                         </span>
                       </div>
@@ -639,7 +639,7 @@ bookings: () => {
                     <div className="flex gap-2 mt-4 flex-wrap">
                       {["confirmed", "pending", "cancelled", "completed"].map(s => (
                         <button key={s} onClick={() => updateBooking(b.id, s)}
-                          className={`text-xs px-3 py-1.5 rounded-xl transition font-medium ${b.status === s ? "bg-orange-500 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"}`}>
+                          className={`text-xs px-3 py-1.5 rounded-xl transition font-medium ${b.status === s ? "bg-orange-500 text-white" : "bg-surface-alt text-text-muted hover:bg-border"}`}>
                           {s.charAt(0).toUpperCase() + s.slice(1)}
                         </button>
                       ))}
@@ -658,18 +658,18 @@ bookings: () => {
                     type="button"
                     disabled={bookingPage <= 1}
                     onClick={() => setBookingPage((p) => Math.max(1, p - 1))}
-                    className="px-4 py-2 rounded-xl border border-gray-700 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500 transition"
+                    className="px-4 py-2 rounded-xl border border-border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500 transition"
                   >
                     ← Previous
                   </button>
-                  <span className="text-sm text-gray-400">
+                  <span className="text-sm text-text-muted">
                     Page {bookingPage} of {bookingTotalPages}
                   </span>
                   <button
                     type="button"
                     disabled={bookingPage >= bookingTotalPages}
                     onClick={() => setBookingPage((p) => Math.min(bookingTotalPages, p + 1))}
-                    className="px-4 py-2 rounded-xl border border-gray-700 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500 transition"
+                    className="px-4 py-2 rounded-xl border border-border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500 transition"
                   >
                     Next →
                   </button>
@@ -682,19 +682,19 @@ bookings: () => {
           {tab === "reviews" && (
             <div>
               <h2 className="text-2xl font-black mb-8">REVIEWS</h2>
-              {loading ? <div className="animate-pulse space-y-3">{[1,2,3].map(i => <div key={i} className="bg-[#111827] h-24 rounded-2xl" />)}</div> :
-              reviews.length === 0 ? <p className="text-gray-600 text-center py-16">No reviews yet.</p> :
+              {loading ? <div className="animate-pulse space-y-3">{[1,2,3].map(i => <div key={i} className="bg-surface h-24 rounded-2xl" />)}</div> :
+              reviews.length === 0 ? <p className="text-text-muted text-center py-16">No reviews yet.</p> :
               <div className="space-y-4">
                 {reviews.map(r => (
-                  <div key={r.id} className="bg-[#111827] border border-gray-800 rounded-2xl p-5">
+                  <div key={r.id} className="bg-surface border border-border rounded-2xl p-5">
                     <div className="flex items-start justify-between flex-wrap gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-1">
                           <p className="font-bold">{r.name}</p>
                           <div className="flex gap-0.5">{[...Array(r.rating)].map((_,j) => <span key={j} className="text-orange-400">★</span>)}</div>
                         </div>
-                        {r.program && <p className="text-xs text-gray-500 mb-2">{r.program}</p>}
-                        <p className="text-gray-300 text-sm leading-relaxed">"{r.review}"</p>
+                        {r.program && <p className="text-xs text-text-muted mb-2">{r.program}</p>}
+                        <p className="text-text-muted text-sm leading-relaxed">"{r.review}"</p>
                       </div>
                       <div>
                         <span className={`text-xs px-3 py-1.5 rounded-full font-medium ${r.status === "approved" ? "bg-green-500/20 text-green-400" : r.status === "rejected" ? "bg-red-500/20 text-red-400" : "bg-yellow-500/20 text-yellow-400"}`}>
@@ -729,7 +729,7 @@ bookings: () => {
               <h2 className="text-2xl font-black mb-8">MESSAGES</h2>
 
               {/* Contact search + read filter */}
-              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-4 mb-6">
+              <div className="bg-surface border border-border rounded-2xl p-4 mb-6">
                 <div className="flex flex-col lg:flex-row gap-3">
                   <div className="flex-1 relative">
                     <input
@@ -737,15 +737,15 @@ bookings: () => {
                       value={contactSearch}
                       onChange={(e) => setContactSearch(e.target.value)}
                       placeholder="Search name, email, phone, message..."
-                      className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 pl-11 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                      className="w-full bg-bg border border-border rounded-xl px-4 py-3 pl-11 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">🔍</span>
                   </div>
 
                   <select
                     value={contactReadFilter}
                     onChange={(e) => setContactReadFilter(e.target.value)}
-                    className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-orange-500 transition"
+                    className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text focus:outline-none focus:border-orange-500 transition"
                   >
                     <option value="all">All Messages</option>
                     <option value="unread">Unread</option>
@@ -756,33 +756,33 @@ bookings: () => {
                     <button
                       type="button"
                       onClick={() => { setContactSearch(""); setContactReadFilter("all"); }}
-                      className="border border-gray-700 text-gray-300 hover:border-orange-500 hover:text-orange-400 px-5 py-3 rounded-xl transition text-sm"
+                      className="border border-border text-text-muted hover:border-orange-500 hover:text-orange-400 px-5 py-3 rounded-xl transition text-sm"
                     >
                       Clear
                     </button>
                   )}
                 </div>
-                <div className="mt-3 text-xs text-gray-500">
+                <div className="mt-3 text-xs text-text-muted">
                   Showing {filteredContacts.length} of {contacts.length} message{contacts.length !== 1 ? "s" : ""}
                 </div>
               </div>
 
-              {loading ? <div className="animate-pulse space-y-3">{[1,2].map(i => <div key={i} className="bg-[#111827] h-24 rounded-2xl" />)}</div> :
-              filteredContacts.length === 0 ? <p className="text-gray-600 text-center py-16">No messages match your search.</p> :
+              {loading ? <div className="animate-pulse space-y-3">{[1,2].map(i => <div key={i} className="bg-surface h-24 rounded-2xl" />)}</div> :
+              filteredContacts.length === 0 ? <p className="text-text-muted text-center py-16">No messages match your search.</p> :
               <div className="space-y-4">
                 {filteredContacts.map(c => (
-                  <div key={c.id} className={`bg-[#111827] border rounded-2xl p-5 ${c.is_read ? "border-gray-800" : "border-orange-500/30"}`}>
+                  <div key={c.id} className={`bg-surface border rounded-2xl p-5 ${c.is_read ? "border-border" : "border-orange-500/30"}`}>
                     <div className="flex items-start justify-between flex-wrap gap-3">
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-bold">{c.name}</p>
                           {!c.is_read && <span className="text-xs bg-orange-500/20 text-orange-400 px-2 rounded-full">New</span>}
                         </div>
-                        <div className="flex gap-4 text-sm text-gray-500 mt-1">
+                        <div className="flex gap-4 text-sm text-text-muted mt-1">
                           <span>{c.email}</span>
                           {c.phone && <span>{c.phone}</span>}
                         </div>
-                        <p className="text-gray-300 text-sm mt-3 leading-relaxed">{c.message}</p>
+                        <p className="text-text-muted text-sm mt-3 leading-relaxed">{c.message}</p>
                       </div>
                     </div>
                     <div className="flex gap-2 mt-4">
@@ -810,29 +810,29 @@ bookings: () => {
               <h2 className="text-2xl font-black mb-8">TRAINERS</h2>
 
               {/* Add Trainer */}
-              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 mb-8">
+              <div className="bg-surface border border-border rounded-2xl p-6 mb-8">
                 <h3 className="font-bold mb-5 text-orange-400">Add New Trainer</h3>
                 <form onSubmit={createTrainer} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     <input
                       type="text" placeholder="Name *" value={newTrainer.name}
                       onChange={e => setNewTrainer(p => ({ ...p, name: e.target.value }))} required
-                      className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                      className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
                     <input
                       type="text" placeholder="Role (e.g. Head Coach)" value={newTrainer.role}
                       onChange={e => setNewTrainer(p => ({ ...p, role: e.target.value }))} required
-                      className="bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                      className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
                   </div>
                   <textarea
                     rows={2} placeholder="Short bio (optional)" value={newTrainer.bio}
                     onChange={e => setNewTrainer(p => ({ ...p, bio: e.target.value }))}
-                    className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition resize-none"
+                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition resize-none"
                   />
                   <div
                     onClick={() => document.getElementById("trainer-img").click()}
-                    className="border-2 border-dashed border-gray-700 hover:border-orange-500/40 rounded-xl p-5 text-center cursor-pointer transition"
+                    className="border-2 border-dashed border-border hover:border-orange-500/40 rounded-xl p-5 text-center cursor-pointer transition"
                   >
                     <input id="trainer-img" type="file" accept="image/*" className="hidden"
                       onChange={e => {
@@ -843,12 +843,12 @@ bookings: () => {
                     {newTrainer.preview ? (
                       <div>
                         <img src={newTrainer.preview} alt="" className="w-24 h-24 rounded-full mx-auto object-cover mb-2" />
-                        <p className="text-xs text-gray-500">Click to change</p>
+                        <p className="text-xs text-text-muted">Click to change</p>
                       </div>
                     ) : (
                       <>
-                        <p className="text-gray-500 text-sm">👤 Upload trainer photo</p>
-                        <p className="text-gray-600 text-xs mt-1">Recommended: square crop</p>
+                        <p className="text-text-muted text-sm">👤 Upload trainer photo</p>
+                        <p className="text-text-muted text-xs mt-1">Recommended: square crop</p>
                       </>
                     )}
                   </div>
@@ -860,10 +860,10 @@ bookings: () => {
 
               {/* Trainer List */}
               <div className="grid md:grid-cols-3 gap-5">
-                {loading ? [1,2,3].map(i => <div key={i} className="bg-[#111827] h-60 rounded-2xl animate-pulse" />) :
-                trainers.length === 0 ? <p className="text-gray-600 col-span-3 text-center py-12">No trainers added yet.</p> :
+                {loading ? [1,2,3].map(i => <div key={i} className="bg-surface h-60 rounded-2xl animate-pulse" />) :
+                trainers.length === 0 ? <p className="text-text-muted col-span-3 text-center py-12">No trainers added yet.</p> :
                 trainers.map(t => (
-                  <div key={t.id} className="bg-[#111827] border border-gray-800 rounded-2xl overflow-hidden">
+                  <div key={t.id} className="bg-surface border border-border rounded-2xl overflow-hidden">
                     {t.image_url ? (
                       <img src={t.image_url} alt={t.name} className="w-full h-48 object-cover" />
                     ) : (
@@ -873,8 +873,8 @@ bookings: () => {
                     )}
                     <div className="p-5">
                       <p className="font-bold text-orange-400">{t.name}</p>
-                      <p className="text-gray-400 text-sm mt-0.5">{t.role}</p>
-                      {t.bio && <p className="text-gray-500 text-xs mt-2 line-clamp-2">{t.bio}</p>}
+                      <p className="text-text-muted text-sm mt-0.5">{t.role}</p>
+                      {t.bio && <p className="text-text-muted text-xs mt-2 line-clamp-2">{t.bio}</p>}
                       <button onClick={() => deleteTrainer(t.id)} className="mt-4 text-xs px-3 py-1.5 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition font-medium">
                         Remove
                       </button>
@@ -891,13 +891,13 @@ bookings: () => {
               <h2 className="text-2xl font-black mb-8">GALLERY</h2>
 
               {/* Create Folder */}
-              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 mb-8">
+              <div className="bg-surface border border-border rounded-2xl p-6 mb-8">
                 <h3 className="font-bold mb-4 text-orange-400">Create New Folder</h3>
                 <form onSubmit={createFolder} className="flex gap-3">
                   <input
                     type="text" placeholder="Folder name (e.g. Competitions, Kids, Gym)" value={newFolder}
                     onChange={e => setNewFolder(e.target.value)} required
-                    className="flex-1 bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                    className="flex-1 bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                   />
                   <button type="submit" className="bg-orange-500 hover:bg-orange-600 transition text-white font-bold px-6 py-3 rounded-xl whitespace-nowrap">
                     Create Folder
@@ -906,15 +906,15 @@ bookings: () => {
               </div>
 
               {/* Folders */}
-              {loading ? <div className="animate-pulse space-y-4">{[1,2].map(i => <div key={i} className="bg-[#111827] h-40 rounded-2xl" />)}</div> :
-              gallery.length === 0 ? <p className="text-gray-600 text-center py-12">No folders yet. Create one above!</p> :
+              {loading ? <div className="animate-pulse space-y-4">{[1,2].map(i => <div key={i} className="bg-surface h-40 rounded-2xl" />)}</div> :
+              gallery.length === 0 ? <p className="text-text-muted text-center py-12">No folders yet. Create one above!</p> :
               <div className="space-y-8">
                 {gallery.map(folder => (
-                  <div key={folder.id} className="bg-[#111827] border border-gray-800 rounded-2xl p-6">
+                  <div key={folder.id} className="bg-surface border border-border rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-5">
                       <div>
                         <h3 className="text-xl font-bold">{folder.name}</h3>
-                        <p className="text-gray-500 text-sm">{folder.photos?.length || 0} photos</p>
+                        <p className="text-text-muted text-sm">{folder.photos?.length || 0} photos</p>
                       </div>
                       <div className="flex gap-3 items-center">
                         {uploadingPhoto[folder.id] && <span className="text-xs text-orange-400">Uploading...</span>}
@@ -948,8 +948,8 @@ bookings: () => {
                         ))}
                       </div>
                     ) : (
-                      <div className="border-2 border-dashed border-gray-700 rounded-xl p-8 text-center">
-                        <p className="text-gray-600 text-sm">No photos yet. Click "Add Photos" to upload.</p>
+                      <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
+                        <p className="text-text-muted text-sm">No photos yet. Click "Add Photos" to upload.</p>
                       </div>
                     )}
                   </div>
@@ -963,37 +963,37 @@ bookings: () => {
             <div className="max-w-lg">
               <h2 className="text-2xl font-black mb-8">SETTINGS</h2>
 
-              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6 mb-6">
+              <div className="bg-surface border border-border rounded-2xl p-6 mb-6">
                 <h3 className="font-bold text-orange-400 mb-1">Account</h3>
-                <p className="text-gray-400 text-sm mb-5">Logged in as {admin?.name} · {admin?.email}</p>
+                <p className="text-text-muted text-sm mb-5">Logged in as {admin?.name} · {admin?.email}</p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-xl">
                     {admin?.name?.charAt(0)}
                   </div>
                   <div>
                     <p className="font-medium">{admin?.name}</p>
-                    <p className="text-gray-500 text-sm">{admin?.role}</p>
+                    <p className="text-text-muted text-sm">{admin?.role}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-[#111827] border border-gray-800 rounded-2xl p-6">
+              <div className="bg-surface border border-border rounded-2xl p-6">
                 <h3 className="font-bold text-orange-400 mb-5">Change Password</h3>
                 <form onSubmit={changePassword} className="space-y-4">
                   <input
                     type="password" placeholder="Current password" value={pwForm.current}
                     onChange={e => setPwForm(p => ({ ...p, current: e.target.value }))} required
-                    className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                   />
                   <input
                     type="password" placeholder="New password" value={pwForm.newPw}
                     onChange={e => setPwForm(p => ({ ...p, newPw: e.target.value }))} required
-                    className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                   />
                   <input
                     type="password" placeholder="Confirm new password" value={pwForm.confirm}
                     onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value }))} required
-                    className="w-full bg-[#0B0F19] border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                    className="w-full bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                   />
                   {pwMsg && (
                     <p className={`text-sm px-4 py-2 rounded-xl border ${pwMsg.type === "success" ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>

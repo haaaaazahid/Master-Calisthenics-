@@ -412,7 +412,7 @@ export default function Community() {
 
   return (
 
-    <main className="bg-[#050816] text-white min-h-screen">
+    <main className="bg-bg text-text min-h-screen">
 
 
       {/* ======================================================
@@ -427,7 +427,7 @@ export default function Community() {
         }}
       >
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-[#050816]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-bg" />
 
         <div className="relative z-10 text-center px-6">
 
@@ -439,7 +439,7 @@ export default function Community() {
             THE COMMUNITY
           </h1>
 
-          <p className="text-gray-300 text-xl max-w-2xl mx-auto leading-relaxed">
+          <p className="text-text-muted text-xl max-w-2xl mx-auto leading-relaxed">
             More than fitness. A brotherhood of discipline,
             strength and transformation.
           </p>
@@ -479,7 +479,7 @@ export default function Community() {
 
             <div
               key={i}
-              className="bg-[#111827]/80 backdrop-blur-xl p-10 rounded-[24px] border border-gray-800 hover:border-orange-500/50 hover:-translate-y-1 transition-all duration-300 group"
+              className="bg-surface/80 backdrop-blur-xl p-10 rounded-[24px] border border-border hover:border-orange-500/50 hover:-translate-y-1 transition-all duration-300 group"
             >
 
               <div className="text-4xl mb-4">
@@ -490,7 +490,7 @@ export default function Community() {
                 {item.title}
               </h2>
 
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-text-muted leading-relaxed">
                 {item.desc}
               </p>
 
@@ -519,7 +519,7 @@ export default function Community() {
             Join the MCI Community
           </h2>
 
-          <p className="text-gray-400 mb-8">
+          <p className="text-text-muted mb-8">
             Get notified whenever we post updates, offers,
             competitions, and new batches — straight to your inbox.
           </p>
@@ -553,7 +553,7 @@ export default function Community() {
                 onChange={(e) =>
                   setSubName(e.target.value)
                 }
-                className="w-full bg-black/40 border border-gray-700 rounded-xl px-5 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                className="w-full bg-bg border border-border rounded-xl px-5 py-3 text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
               />
 
               <input
@@ -564,7 +564,7 @@ export default function Community() {
                   setSubEmail(e.target.value)
                 }
                 required
-                className="w-full bg-black/40 border border-gray-700 rounded-xl px-5 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 transition"
+                className="w-full bg-bg border border-border rounded-xl px-5 py-3 text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
               />
 
               <button
@@ -589,7 +589,7 @@ export default function Community() {
               )}
 
 
-              <p className="text-gray-600 text-xs">
+              <p className="text-text-muted text-xs">
                 No spam. Unsubscribe anytime.
               </p>
 
@@ -625,7 +625,7 @@ export default function Community() {
         </div>
 
 
-        <p className="text-gray-500 mb-10">
+        <p className="text-text-muted mb-10">
           Straight from our coaches and community.
         </p>
 
@@ -642,7 +642,7 @@ export default function Community() {
 
               <div
                 key={i}
-                className="bg-[#111827] rounded-2xl h-48 animate-pulse"
+                className="bg-surface rounded-2xl h-48 animate-pulse"
               />
 
             ))}
@@ -668,7 +668,7 @@ export default function Community() {
               {error}
             </p>
 
-            <p className="text-gray-500 text-sm mt-2">
+            <p className="text-text-muted text-sm mt-2">
               Please refresh the page and try again.
             </p>
 
@@ -685,7 +685,7 @@ export default function Community() {
           !error &&
           posts.length === 0 && (
 
-            <div className="text-center py-20 text-gray-600">
+            <div className="text-center py-20 text-text-muted">
 
               <div className="text-6xl mb-4">
                 📭
@@ -717,7 +717,7 @@ export default function Community() {
                     post.post_type
                   ] || {
                     bg: "bg-gray-500/20",
-                    text: "text-gray-400",
+                    text: "text-text-muted",
                     label:
                       post.post_type ||
                       "Post",
@@ -734,7 +734,7 @@ export default function Community() {
 
                   <article
                     key={post.id}
-                    className="bg-[#0d1424] rounded-2xl overflow-hidden border border-gray-800 hover:border-orange-500/30 transition-all duration-300 group"
+                    className="bg-surface-alt rounded-2xl overflow-hidden border border-border hover:border-orange-500/30 transition-all duration-300 group"
                   >
 
 
@@ -811,7 +811,7 @@ export default function Community() {
 
                           <div>
 
-                            <p className="text-sm font-medium text-white">
+                            <p className="text-sm font-medium text-text">
 
                               {getAuthorName(
                                 post.author
@@ -819,7 +819,7 @@ export default function Community() {
 
                             </p>
 
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-text-muted">
 
                               {formatDate(
                                 post.created_at
@@ -858,7 +858,7 @@ export default function Community() {
 
                       {post.content && (
 
-                        <p className="text-gray-400 text-sm leading-relaxed mb-5">
+                        <p className="text-text-muted text-sm leading-relaxed mb-5">
 
                           {post.content}
 
@@ -877,7 +877,7 @@ export default function Community() {
                         className={`flex items-center gap-2 text-sm font-medium transition-all px-4 py-2 rounded-xl ${
                           liked[post.id]
                             ? "text-orange-400 bg-orange-500/10"
-                            : "text-gray-500 hover:text-orange-400 hover:bg-orange-500/10"
+                            : "text-text-muted hover:text-orange-400 hover:bg-orange-500/10"
                         }`}
                       >
 

@@ -17,7 +17,7 @@ const trainers = [
 
 const TrainersSection = () => {
   return (
-    <section className="py-32 px-6 bg-[#0B0F19]">
+    <section className="py-32 px-6 bg-bg">
 
       <div className="max-w-7xl mx-auto">
 
@@ -32,7 +32,7 @@ const TrainersSection = () => {
             <motion.div
               key={index}
               whileHover={{ y: -10 }}
-              className="bg-[#111827] border border-gray-800 rounded-3xl overflow-hidden"
+              className="bg-surface border border-border rounded-3xl overflow-hidden"
             >
 
               <div className="h-[400px] bg-gradient-to-br from-orange-500 to-orange-800"></div>
@@ -43,7 +43,7 @@ const TrainersSection = () => {
                   {trainer.name}
                 </h3>
 
-                <p className="text-gray-400 mt-4">
+                <p className="text-text-muted mt-4">
                   {trainer.role}
                 </p>
 

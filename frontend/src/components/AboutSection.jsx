@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 const AboutSection = () => {
   return (
-    <section className="py-32 px-6 bg-[#0F172A]">
+    <section className="py-32 px-6 bg-bg-secondary">
 
       <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-20 items-center">
 
@@ -19,7 +19,7 @@ const AboutSection = () => {
             <span className="text-orange-500"> MCI?</span>
           </h2>
 
-          <p className="text-gray-400 text-lg leading-9">
+          <p className="text-text-muted text-lg leading-9">
             Master Calisthenics India focuses on elite bodyweight
             strength, aesthetics, mobility and athletic performance.
 

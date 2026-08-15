@@ -13,8 +13,8 @@ html{
 }
 
 body{
-  background:#0B0F19;
-  color:white;
+  background: rgb(var(--color-bg));
+  color: rgb(var(--color-text));
   font-family:'Inter', sans-serif;
   overflow-x:hidden;
 }
@@ -42,7 +42,7 @@ button{
 }
 
 ::-webkit-scrollbar-track{
-  background:#0B0F19;
+  background: rgb(var(--color-bg-secondary));
 }
 
 ::-webkit-scrollbar-thumb{

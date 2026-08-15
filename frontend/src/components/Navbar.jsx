@@ -16,7 +16,7 @@ export default function Navbar() {
   const location = useLocation();
 
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-black/80 backdrop-blur-xl border-b border-gray-800/60">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-bg/80 backdrop-blur-xl border-b border-border/60">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
 
         <Link to="/" onClick={() => setOpen(false)}>
@@ -34,7 +34,7 @@ export default function Navbar() {
               className={`transition-colors ${
                 location.pathname === l.to
                   ? "text-orange-400"
-                  : "text-gray-400 hover:text-white"
+                  : "text-text-muted hover:text-accent"
               }`}
             >
               {l.label}
@@ -52,21 +52,21 @@ export default function Navbar() {
         </div>
 
         {/* MOBILE BUTTON */}
-        <button onClick={() => setOpen(!open)} className="md:hidden text-white">
+        <button onClick={() => setOpen(!open)} className="md:hidden text-text">
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
       {/* MOBILE MENU */}
       {open && (
-        <div className="md:hidden flex flex-col bg-black border-t border-gray-800 px-6 py-6 gap-5">
+        <div className="md:hidden flex flex-col bg-bg border-t border-border px-6 py-6 gap-5">
           {links.map(l => (
             <Link
               key={l.to}
               to={l.to}
               onClick={() => setOpen(false)}
               className={`text-sm uppercase tracking-wider font-medium transition-colors ${
-                location.pathname === l.to ? "text-orange-400" : "text-gray-300 hover:text-white"
+                location.pathname === l.to ? "text-orange-400" : "text-text-muted hover:text-accent"
               }`}
             >
               {l.label}

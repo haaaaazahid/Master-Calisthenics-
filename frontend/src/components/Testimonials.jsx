@@ -1,6 +1,6 @@
 const Testimonials = () => {
   return (
-    <section className="py-32 px-6 bg-[#0F172A]">
+    <section className="py-32 px-6 bg-bg-secondary">
 
       <div className="max-w-6xl mx-auto text-center">
 
@@ -10,9 +10,9 @@ const Testimonials = () => {
 
         <div className="grid md:grid-cols-3 gap-8">
 
-          <div className="bg-[#111827] p-10 rounded-3xl border border-gray-800">
+          <div className="bg-surface p-10 rounded-3xl border border-border">
 
-            <p className="text-gray-400 leading-8">
+            <p className="text-text-muted leading-8">
               “Lost 10kg and gained confidence. Best training environment.”
             </p>
 
@@ -22,9 +22,9 @@ const Testimonials = () => {
 
           </div>
 
-          <div className="bg-[#111827] p-10 rounded-3xl border border-gray-800">
+          <div className="bg-surface p-10 rounded-3xl border border-border">
 
-            <p className="text-gray-400 leading-8">
+            <p className="text-text-muted leading-8">
               “Learned handstands and improved my strength massively.”
             </p>
 
@@ -34,9 +34,9 @@ const Testimonials = () => {
 
           </div>
 
-          <div className="bg-[#111827] p-10 rounded-3xl border border-gray-800">
+          <div className="bg-surface p-10 rounded-3xl border border-border">
 
-            <p className="text-gray-400 leading-8">
+            <p className="text-text-muted leading-8">
               “The coaching quality and community is next level.”
             </p>
 
