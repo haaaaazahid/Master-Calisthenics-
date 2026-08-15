@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import heroImage from "../assets/hero.jpg";
 import { getPrograms, getPosts, getReviews, getTrainers } from "../api/api.js";
 
@@ -12,6 +12,9 @@ import coachHeaven from "../assets/trainers/coach-heaven.jpeg";
 import coachKabir  from "../assets/trainers/coach-kabir.jpeg";
 import coachKunal  from "../assets/trainers/coach-kunal.jpeg";
 import coachMartin from "../assets/trainers/coach-martin.jpeg";
+import coachBali   from "../assets/trainers/Coach Bali.jpeg";
+import coachSunny  from "../assets/trainers/Coach Sunny.jpeg";
+import coachZahid  from "../assets/trainers/Coach Zahid.jpeg";
 
 // TEMPORARY hardcoded trainer list — swap this out once the Trainers sheet
 // in Google Apps Script is actually populated and `getTrainers()` returns
@@ -20,7 +23,7 @@ import coachMartin from "../assets/trainers/coach-martin.jpeg";
 const FALLBACK_TRAINERS = [
   { name: "Founder Vaibhav", role: "Founder & Head Coach", image: null },
   { name: "Coach Kunal",     role: "Calisthenics Coach",   image: coachKunal },
-  { name: "Coach Bali",      role: "Calisthenics Coach",   image: null },
+  { name: "Coach Bali",      role: "Calisthenics Coach",   image: coachBali },
   { name: "Coach Aman",      role: "Calisthenics Coach",   image: coachAman },
   { name: "Coach Martin",    role: "Calisthenics Coach",   image: coachMartin },
   { name: "Coach Aryan",     role: "Calisthenics Coach",   image: null },
@@ -28,8 +31,8 @@ const FALLBACK_TRAINERS = [
   { name: "Coach Vedant",    role: "Calisthenics Coach",   image: null },
   { name: "Coach Vedang",    role: "Calisthenics Coach",   image: null },
   { name: "Coach Heaven",    role: "Calisthenics Coach",   image: coachHeaven },
-  { name: "Coach Sunny",     role: "Calisthenics Coach",   image: null },
-  { name: "Coach Zahid",     role: "Calisthenics Coach",   image: null },
+  { name: "Coach Sunny",     role: "Calisthenics Coach",   image: coachSunny },
+  { name: "Coach Zahid",     role: "Calisthenics Coach",   image: coachZahid },
 ];
 
 const typeColors = {
@@ -44,6 +47,7 @@ export default function Home() {
   const [posts, setPosts]       = useState([]);
   const [reviews, setReviews]   = useState([]);
   const [trainers, setTrainers] = useState([]);
+  const [lightbox, setLightbox] = useState(null); // { name, role, image } | null
 
   useEffect(() => {
     // safeArray: never trust an API response to have the exact shape we
@@ -288,7 +292,8 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   viewport={{ once: true }}
-                  className="bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden hover:border-orange-500/40 transition-all hover:-translate-y-1 group"
+                  onClick={() => setLightbox({ name: t.name, role: t.role, image: t.image_url })}
+                  className="cursor-pointer bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden hover:border-orange-500/40 transition-all hover:-translate-y-1 group"
                 >
                   {t.image_url ? (
                     <img src={t.image_url} alt={t.name} className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -313,7 +318,8 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.06 }}
                   viewport={{ once: true }}
-                  className="bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden hover:border-orange-500/40 transition-all hover:-translate-y-1 group"
+                  onClick={() => setLightbox({ name: t.name, role: t.role, image: t.image })}
+                  className="cursor-pointer bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden hover:border-orange-500/40 transition-all hover:-translate-y-1 group"
                 >
                   {t.image ? (
                     <img src={t.image} alt={t.name} className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -454,6 +460,48 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── TRAINER LIGHTBOX ── */}
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            onClick={() => setLightbox(null)}
+            className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-6"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-lg w-full bg-[#0B0F19] border border-gray-800 rounded-3xl overflow-hidden"
+            >
+              <button
+                onClick={() => setLightbox(null)}
+                aria-label="Close"
+                className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/60 hover:bg-orange-500 text-white flex items-center justify-center text-xl transition-colors"
+              >
+                ×
+              </button>
+              {lightbox.image ? (
+                <img src={lightbox.image} alt={lightbox.name} className="w-full max-h-[70vh] object-cover" />
+              ) : (
+                <div className="h-72 bg-gradient-to-br from-orange-500/20 to-orange-900/20 flex items-center justify-center">
+                  <span className="text-9xl opacity-30">👤</span>
+                </div>
+              )}
+              <div className="p-8 text-center">
+                <h3 className="text-3xl font-black text-orange-400">{lightbox.name}</h3>
+                <p className="text-gray-400 mt-2">{lightbox.role}</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </main>
   );
