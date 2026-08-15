@@ -6,10 +6,8 @@ const ThemeContext = createContext(null);
 function getInitialTheme() {
   const stored = localStorage.getItem("mci-theme");
   if (stored === "light" || stored === "dark") return stored;
-  // No stored preference — respect system setting
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  // No stored preference — default to light regardless of system setting
+  return "light";
 }
 
 export function ThemeProvider({ children }) {
@@ -24,15 +22,6 @@ export function ThemeProvider({ children }) {
     }
     localStorage.setItem("mci-theme", theme);
   }, [theme]);
-
-  // If the user has never explicitly chosen, keep following system changes
-  useEffect(() => {
-    if (localStorage.getItem("mci-theme")) return; // user already chose explicitly
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e) => setTheme(e.matches ? "dark" : "light");
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
