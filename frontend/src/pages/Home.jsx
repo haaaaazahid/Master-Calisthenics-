@@ -15,6 +15,7 @@ import coachMartin from "../assets/trainers/coach-martin.jpeg";
 import coachBali   from "../assets/trainers/Coach Bali.jpeg";
 import coachSunny  from "../assets/trainers/Coach Sunny.jpeg";
 import coachZahid  from "../assets/trainers/Coach Zahid.jpeg";
+import coachVedant  from "../assets/trainers/Coach Vedant.jpeg";
 
 // TEMPORARY hardcoded trainer list — swap this out once the Trainers sheet
 // in Google Apps Script is actually populated and `getTrainers()` returns
