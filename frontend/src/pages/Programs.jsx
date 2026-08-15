@@ -9,6 +9,7 @@ const iconMap = {
   "Group Personalized": "👥",
   "Kids Fitness & Calisthenics": "🧒",
   "Women's Special Batch": "👩",
+  "Kickboxing": "🥊",
 };
 
 function parseArray(value) {
@@ -61,14 +62,10 @@ export default function Programs() {
         setError("");
 
         /*
-         * IMPORTANT:
          * apiGet("/programs") converts this into:
          *
          * Google Apps Script:
          * /exec?action=programs
-         *
-         * Do NOT use:
-         * /programs
          */
 
         const data = await apiGet("/programs");
@@ -88,15 +85,14 @@ export default function Programs() {
             ? data.data
             : [];
 
-        const normalizedPrograms =
-          sourcePrograms
-            .map(normalizeProgram)
-            .filter((program) => program.active !== false)
-            .sort(
-              (a, b) =>
-                Number(a.sort_order || 0) -
-                Number(b.sort_order || 0)
-            );
+        const normalizedPrograms = sourcePrograms
+          .map(normalizeProgram)
+          .filter((program) => program.active !== false)
+          .sort(
+            (a, b) =>
+              Number(a.sort_order || 0) -
+              Number(b.sort_order || 0)
+          );
 
         setPrograms(normalizedPrograms);
       } catch (err) {
@@ -128,6 +124,7 @@ export default function Programs() {
       {/* =====================================================
           HERO
       ====================================================== */}
+
       <section className="pt-36 pb-20 px-6 text-center relative overflow-hidden">
 
         <div className="absolute inset-0 bg-gradient-radial from-orange-500/5 to-transparent pointer-events-none" />
@@ -165,6 +162,7 @@ export default function Programs() {
       {/* =====================================================
           TRIAL BANNER
       ====================================================== */}
+
       <div className="max-w-4xl mx-auto px-6 mb-16">
 
         <div className="bg-gradient-to-r from-orange-500/20 to-orange-900/10 border border-orange-500/40 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-5">
@@ -194,6 +192,7 @@ export default function Programs() {
       {/* =====================================================
           LOADING
       ====================================================== */}
+
       {loading && (
         <section className="max-w-6xl mx-auto px-6 pb-24 space-y-10">
 
@@ -211,6 +210,7 @@ export default function Programs() {
       {/* =====================================================
           ERROR
       ====================================================== */}
+
       {!loading && error && (
         <section className="max-w-4xl mx-auto px-6 pb-24">
 
@@ -233,6 +233,7 @@ export default function Programs() {
       {/* =====================================================
           PROGRAMS
       ====================================================== */}
+
       {!loading && !error && (
         <section className="max-w-6xl mx-auto px-6 pb-24 space-y-10">
 
@@ -277,6 +278,7 @@ export default function Programs() {
                   {/* =================================================
                       HEADER
                   ================================================== */}
+
                   <div className="p-8 md:p-10 border-b border-gray-800/60">
 
                     <div className="flex items-start justify-between flex-wrap gap-4">
@@ -325,6 +327,7 @@ export default function Programs() {
 
 
                       {/* PRICE TOGGLE */}
+
                       {p.pricing.length > 0 && (
                         <button
                           type="button"
@@ -349,19 +352,24 @@ export default function Programs() {
 
 
                   {/* =================================================
-                      FEATURES
+                      FEATURES + PRICING
                   ================================================== */}
+
                   <div className="p-8 md:p-10">
 
                     <div
                       className={
-                        isOpen && p.pricing.length > 0
+                        isOpen &&
+                        p.pricing.length > 0
                           ? "grid md:grid-cols-2 gap-8"
                           : ""
                       }
                     >
 
-                      {/* FEATURES */}
+                      {/* =================================================
+                          FEATURES
+                      ================================================== */}
+
                       <div>
 
                         <h3 className="text-sm uppercase tracking-wider text-gray-500 mb-4 font-semibold">
@@ -402,79 +410,87 @@ export default function Programs() {
 
                       {/* =================================================
                           PRICING
+                          IMPORTANT:
+                          Displays ALL pricing entries from Google Sheets.
                       ================================================== */}
+
                       {isOpen &&
+                        Array.isArray(p.pricing) &&
                         p.pricing.length > 0 && (
-                          <motion.div
-                            initial={{
-                              opacity: 0,
-                              height: 0,
-                            }}
-                            animate={{
-                              opacity: 1,
-                              height: "auto",
-                            }}
-                            className="mt-8 md:mt-0"
-                          >
 
-                            <h3 className="text-sm uppercase tracking-wider text-gray-500 mb-4 font-semibold">
-                              Pricing
-                            </h3>
+                        <motion.div
+                          initial={{
+                            opacity: 0,
+                            height: 0,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            height: "auto",
+                          }}
+                          transition={{
+                            duration: 0.3,
+                          }}
+                          className="mt-8 md:mt-0"
+                        >
 
-                            <div className="space-y-2">
+                          <h3 className="text-sm uppercase tracking-wider text-gray-500 mb-4 font-semibold">
+                            Pricing
+                          </h3>
 
-                              {p.pricing.map(
-                                (item, j) => {
+                          <div className="space-y-2">
 
-                                  const label =
-                                    Array.isArray(item)
-                                      ? item[0]
-                                      : "";
+                            {p.pricing.map(
+                              (item, j) => {
 
-                                  const price =
-                                    Array.isArray(item)
-                                      ? item[1]
-                                      : "";
+                                const label =
+                                  Array.isArray(item)
+                                    ? item[0]
+                                    : "";
 
-                                  return (
-                                    <div
-                                      key={j}
-                                      className={`flex justify-between items-center px-4 py-3 rounded-xl ${
+                                const price =
+                                  Array.isArray(item)
+                                    ? item[1]
+                                    : "";
+
+                                return (
+                                  <div
+                                    key={`${p.id}-pricing-${j}`}
+                                    className={`flex justify-between items-center gap-4 px-4 py-3 rounded-xl ${
+                                      j === 0
+                                        ? "bg-orange-500/10 border border-orange-500/30"
+                                        : "bg-[#0B0F19] border border-gray-800"
+                                    }`}
+                                  >
+
+                                    <span
+                                      className={`text-sm ${
                                         j === 0
-                                          ? "bg-orange-500/10 border border-orange-500/30"
-                                          : "bg-[#0B0F19] border border-gray-800"
+                                          ? "text-orange-300 font-medium"
+                                          : "text-gray-400"
                                       }`}
                                     >
+                                      {label}
+                                    </span>
 
-                                      <span
-                                        className={`text-sm ${
-                                          j === 0
-                                            ? "text-orange-300 font-medium"
-                                            : "text-gray-400"
-                                        }`}
-                                      >
-                                        {label}
-                                      </span>
+                                    <span
+                                      className={`font-bold whitespace-nowrap ${
+                                        j === 0
+                                          ? "text-orange-400 text-lg"
+                                          : "text-white"
+                                      }`}
+                                    >
+                                      {price}
+                                    </span>
 
-                                      <span
-                                        className={`font-bold ${
-                                          j === 0
-                                            ? "text-orange-400 text-lg"
-                                            : "text-white"
-                                        }`}
-                                      >
-                                        {price}
-                                      </span>
+                                  </div>
+                                );
+                              }
+                            )}
 
-                                    </div>
-                                  );
-                                }
-                              )}
+                          </div>
 
-                            </div>
-
-                          </motion.div>
-                        )}
+                        </motion.div>
+                      )}
 
                     </div>
 
@@ -482,6 +498,7 @@ export default function Programs() {
                     {/* =================================================
                         BUTTONS
                     ================================================== */}
+
                     <div className="mt-8 pt-8 border-t border-gray-800 flex flex-col sm:flex-row gap-4">
 
                       <Link
@@ -520,6 +537,7 @@ export default function Programs() {
       {/* =====================================================
           BATCH TIMINGS
       ====================================================== */}
+
       <section className="max-w-4xl mx-auto px-6 pb-24">
 
         <h2 className="text-4xl font-black text-center mb-12">
