@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import heroImage from "../assets/hero.jpg";
 import { getPrograms, getPosts, getReviews, getTrainers } from "../api/api.js";
 
 // Real coach photos — imported so Vite bundles them into the build.
