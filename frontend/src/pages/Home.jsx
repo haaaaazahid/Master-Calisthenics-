@@ -11,7 +11,6 @@ import coachAman   from "../assets/trainers/coach-aman.jpeg";
 import coachHeaven from "../assets/trainers/coach-heaven.jpeg";
 import coachKabir  from "../assets/trainers/coach-kabir.jpeg";
 import coachKunal  from "../assets/trainers/coach-kunal.jpeg";
-import coachMartin from "../assets/trainers/coach-martin.jpeg";
 import coachBali   from "../assets/trainers/Coach Bali.jpeg";
 import coachSunny  from "../assets/trainers/Coach Sunny.jpeg";
 import coachZahid  from "../assets/trainers/Coach Zahid.jpeg";
@@ -26,7 +25,6 @@ const FALLBACK_TRAINERS = [
   { name: "Coach Kunal",     role: "Calisthenics Coach",   image: coachKunal },
   { name: "Coach Bali",      role: "Calisthenics Coach",   image: coachBali },
   { name: "Coach Aman",      role: "Calisthenics Coach",   image: coachAman },
-  { name: "Coach Martin",    role: "Calisthenics Coach",   image: coachMartin },
   { name: "Coach Aryan",     role: "Calisthenics Coach",   image: null },
   { name: "Coach Kabir",     role: "Calisthenics Coach",   image: coachKabir },
   { name: "Coach Vedant",    role: "Calisthenics Coach",   image: coachVedant},
