@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import heroImage from "../assets/hero.jpg";
-import { getPrograms, getPosts, getReviews, getTrainers } from "../api/api.js";
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const typeColors = {
   announcement: "bg-blue-500/20 text-blue-400",
@@ -18,10 +18,10 @@ export default function Home() {
   const [trainers, setTrainers] = useState([]);
 
   useEffect(() => {
-    getPrograms().then(d => { if (d.success) setPrograms(d.programs.slice(0, 3)); }).catch(() => {});
-    getPosts().then(d => { if (d.success) setPosts(d.posts.slice(0, 3)); }).catch(() => {});
-    getReviews().then(d => { if (d.success) setReviews(d.reviews.slice(0, 3)); }).catch(() => {});
-    getTrainers().then(d => { if (d.success) setTrainers(d.trainers); }).catch(() => {});
+    fetch(`${API}/programs`).then(r => r.json()).then(d => { if (d.success) setPrograms(d.programs.slice(0, 3)); });
+    fetch(`${API}/posts`).then(r => r.json()).then(d => { if (d.success) setPosts(d.posts.slice(0, 3)); });
+    fetch(`${API}/reviews`).then(r => r.json()).then(d => { if (d.success) setReviews(d.reviews.slice(0, 3)); });
+    fetch(`${API}/trainers`).then(r => r.json()).then(d => { if (d.success) setTrainers(d.trainers); }).catch(() => {});
   }, []);
 
   function formatDate(d) {
@@ -183,7 +183,7 @@ export default function Home() {
                 viewport={{ once: true }}
                 className={`bg-[#111827] border rounded-[28px] p-8 hover:border-orange-500/60 transition-all duration-500 hover:-translate-y-1 ${p.is_featured ? "border-orange-500/40 ring-1 ring-orange-500/20" : "border-gray-800"}`}
               >
-                {Boolean(p.is_featured) && (
+                {p.is_featured && (
                   <span className="text-xs bg-orange-500 text-white px-3 py-1 rounded-full font-semibold mb-4 inline-block">
                     ⭐ Most Popular
                   </span>
@@ -361,7 +361,7 @@ export default function Home() {
                       <span key={j} className="text-gray-700">★</span>
                     ))}
                   </div>
-<p className="text-gray-300 leading-8 italic mb-6">"{r.review_text || r.review}"</p>                  <div className="border-t border-gray-800 pt-5 flex items-center gap-3">
+                    <p className="text-gray-300 leading-8 italic mb-6">"{r.review_text || r.review}"</p>                  <div className="border-t border-gray-800 pt-5 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold">
                       {r.name.charAt(0)}
                     </div>

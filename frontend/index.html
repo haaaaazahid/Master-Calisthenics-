@@ -8,7 +8,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/mci.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Master Calisthenics India</title>
+    <title>Master Calisthenics India | Strength. Skill. Community.</title>
+    <meta name="description" content="Premium calisthenics coaching in Mumbai. Group training, personal training, and kids fitness — book a free trial today." />
+    <script>
+      // Runs before React mounts, so the correct theme class is on <html>
+      // for the very first paint — prevents a light-mode flash on load
+      // for users who have dark mode saved or set at the OS level.
+      (function () {
+        try {
+          var stored = localStorage.getItem("mci-theme");
+          var theme = stored || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          if (theme === "dark") document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
