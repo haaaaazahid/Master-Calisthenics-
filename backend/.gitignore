@@ -1,0 +1,17 @@
+﻿node_modules
+
+# Environment files — never commit real secrets (DB creds, JWT secret,
+# Cloudinary secret, Google OAuth secret, Gmail app password all live here)
+.env
+.env.local
+.env.development
+.env.production
+*.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS junk
+.DS_Store
+Thumbs.db

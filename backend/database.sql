@@ -1,13 +1,13 @@
--- ═══════════════════════════════════════════════════════════
---  MASTER CALISTHENICS INDIA — DATABASE SCHEMA
+﻿-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+--  MASTER CALISTHENICS INDIA â€” DATABASE SCHEMA
 --  Run this file in MySQL Workbench or terminal:
 --  mysql -u root -p < database.sql
--- ═══════════════════════════════════════════════════════════
+-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 CREATE DATABASE IF NOT EXISTS mci_db;
 USE mci_db;
 
--- ─── Admins ───────────────────────────────────────────────
+-- â”€â”€â”€ Admins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS admins (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   name        VARCHAR(100) NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS admins (
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ─── Trial Bookings ───────────────────────────────────────
+-- â”€â”€â”€ Trial Bookings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS bookings (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   name          VARCHAR(100) NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ─── Reviews ──────────────────────────────────────────────
+-- â”€â”€â”€ Reviews â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS reviews (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   name        VARCHAR(100) NOT NULL,
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ─── Community Posts ──────────────────────────────────────
+-- â”€â”€â”€ Community Posts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS posts (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   author      VARCHAR(100) NOT NULL,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS posts (
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ─── Contact Messages ─────────────────────────────────────
+-- â”€â”€â”€ Contact Messages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS contacts (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   name        VARCHAR(100) NOT NULL,
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS contacts (
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ─── Programs (editable from admin) ──────────────────────
+-- â”€â”€â”€ Programs (editable from admin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 CREATE TABLE IF NOT EXISTS programs (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   title       VARCHAR(150) NOT NULL,
@@ -85,7 +85,11 @@ CREATE TABLE IF NOT EXISTS programs (
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ─── Gallery ──────────────────────────────────────────────
+-- â”€â”€â”€ Gallery (legacy, unused) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- Superseded by gallery_folders + gallery_photos below, which is what
+-- galleryController.js actually queries. Left in place untouched so we
+-- don't drop any data that may already exist here â€” safe to ignore/drop
+-- later once you've confirmed nothing still reads from it.
 CREATE TABLE IF NOT EXISTS gallery (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   caption     VARCHAR(200),
@@ -95,46 +99,94 @@ CREATE TABLE IF NOT EXISTS gallery (
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ─── Seed: Default Admin ──────────────────────────────────
--- Password = MCI@Admin2026  (bcrypt hash — will be replaced on first run by server.js)
+-- â”€â”€â”€ Trainers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- Queried by backend/src/controllers/trainersController.js â€” this table
+-- was missing from the schema entirely even though the controller/routes
+-- already assume it exists.
+CREATE TABLE IF NOT EXISTS trainers (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(100) NOT NULL,
+  role        VARCHAR(100) NOT NULL,
+  bio         TEXT,
+  image_url   VARCHAR(500),
+  sort_order  INT DEFAULT 0,
+  active      TINYINT(1) DEFAULT 1,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- â”€â”€â”€ Newsletter Subscribers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- Queried by backend/src/controllers/subscriberController.js â€” also
+-- missing from the schema. New community posts email everyone here.
+CREATE TABLE IF NOT EXISTS subscribers (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  email       VARCHAR(150) NOT NULL UNIQUE,
+  name        VARCHAR(100),
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- â”€â”€â”€ Gallery Folders + Photos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- Queried by backend/src/controllers/galleryController.js â€” also missing.
+-- ON DELETE CASCADE means deleting a folder cleans up its photo rows too
+-- (note: it does NOT delete the underlying Cloudinary assets â€” that still
+-- needs a cloudinary.uploader.destroy() call in galleryController.js).
+CREATE TABLE IF NOT EXISTS gallery_folders (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(150) NOT NULL,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS gallery_photos (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  folder_id   INT NOT NULL,
+  image_url   VARCHAR(500) NOT NULL,
+  caption     VARCHAR(200),
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_gallery_photos_folder
+    FOREIGN KEY (folder_id) REFERENCES gallery_folders(id)
+    ON DELETE CASCADE
+);
+
+-- â”€â”€â”€ Seed: Default Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+-- Password = MCI@Admin2026  (bcrypt hash â€” will be replaced on first run by server.js)
 INSERT IGNORE INTO admins (name, email, password, role)
 VALUES ('Super Admin', 'admin@mastercalisthenicsindia.com', 'REPLACE_ON_FIRST_RUN', 'superadmin');
 
--- ─── Seed: Sample Programs ────────────────────────────────
+-- â”€â”€â”€ Seed: Sample Programs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT IGNORE INTO programs (id, title, subtitle, icon, color, features, pricing, is_featured, sort_order) VALUES
-(1, 'Group Batch Training', 'Train Together. Grow Stronger.', '🤸', '#f97316',
+(1, 'Group Batch Training', 'Train Together. Grow Stronger.', 'ðŸ¤¸', '#f97316',
   '["Calisthenics & functional fitness","Skill learning (pull-ups, handstands)","Mobility & flexibility sessions","Cardio & HIIT conditioning","Beginners to advanced friendly"]',
-  '[["1 Week (One-time only)","₹499"],["1 Month","₹4,000"],["3 Months","₹12,000"],["6 Months","₹18,000"],["12 Months","₹26,000"]]',
+  '[["1 Week (One-time only)","â‚¹499"],["1 Month","â‚¹4,000"],["3 Months","â‚¹12,000"],["6 Months","â‚¹18,000"],["12 Months","â‚¹26,000"]]',
   0, 1),
 
-(2, 'Personal Training (1-to-1)', 'Personal Attention. Faster Results.', '🎯', '#3b82f6',
+(2, 'Personal Training (1-to-1)', 'Personal Attention. Faster Results.', 'ðŸŽ¯', '#3b82f6',
   '["Completely customized plan","Goal-specific (Fat loss, Skills)","Flexible time slots","Technique & form correction","Nutrition guidance included"]',
-  '[["Drop-In","₹1,500"],["4 Sessions","₹5,400"],["8 Sessions","₹9,600"],["12 Sessions","₹13,200"],["16 Sessions","₹16,000"]]',
+  '[["Drop-In","â‚¹1,500"],["4 Sessions","â‚¹5,400"],["8 Sessions","â‚¹9,600"],["12 Sessions","â‚¹13,200"],["16 Sessions","â‚¹16,000"]]',
   1, 2),
 
-(3, 'Group Personalized', 'Small Group. Big Results.', '💪', '#10b981',
-  '["Small group (2–3 people)","Personalized programming","High accountability","Cost-effective PT alternative"]',
-  '[["3 days/wk Monthly","₹7,999"],["4 days/wk Monthly","₹9,999"],["5 days/wk Monthly","₹11,999"],["3 days/wk Quarterly","₹19,999"],["5 days/wk Quarterly","₹29,999"]]',
+(3, 'Group Personalized', 'Small Group. Big Results.', 'ðŸ’ª', '#10b981',
+  '["Small group (2â€“3 people)","Personalized programming","High accountability","Cost-effective PT alternative"]',
+  '[["3 days/wk Monthly","â‚¹7,999"],["4 days/wk Monthly","â‚¹9,999"],["5 days/wk Monthly","â‚¹11,999"],["3 days/wk Quarterly","â‚¹19,999"],["5 days/wk Quarterly","â‚¹29,999"]]',
   0, 3),
 
-(4, 'Kids Fitness & Calisthenics', 'Strong Kids. Confident Future.', '🧒', '#a855f7',
+(4, 'Kids Fitness & Calisthenics', 'Strong Kids. Confident Future.', 'ðŸ§’', '#a855f7',
   '["Age Group: 6 to 14 Years","Bodyweight strength & agility","Animal flow & fun games","Sports conditioning","Improved focus & discipline"]',
-  '[["1 Month","₹4,000"],["3 Months","₹6,999"],["6 Months","₹11,499"],["12 Months","₹17,499"]]',
+  '[["1 Month","â‚¹4,000"],["3 Months","â‚¹6,999"],["6 Months","â‚¹11,499"],["12 Months","â‚¹17,499"]]',
   0, 4),
 
-(5, "Women's Special Batch", 'Strong • Confident • Healthy', '👩', '#ec4899',
+(5, 'Kickboxing', 'Strong • Confident • Healthy', '🥊', '#ec4899',
   '["Mon-Wed-Fri (Evening: 6:15 & 7:30)","Fat loss & toning focus","Safe & comfortable environment","Strength & mobility building","Mix of Skills, HIIT, & Strength"]',
-  '[["1 Month","₹3,000"],["3 Months","₹7,500"],["6 Months","₹12,000"],["1 Year","₹18,000"]]',
+  '[["3 Days/Week (12 Sessions)","₹2,500"],["3 Months","₹7,500"],["6 Months","₹12,000"],["1 Year","₹18,000"]]',
   0, 5);
 
--- ─── Seed: Sample Reviews ─────────────────────────────────
+-- â”€â”€â”€ Seed: Sample Reviews â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT IGNORE INTO reviews (id, name, rating, review_text, program, approved) VALUES
 (1, 'Varun M.', 5, 'In 6 months I went from zero pull-ups to muscle-ups. MCI is genuinely the best investment I have made for my body.', 'Group Batch Training', 1),
 (2, 'Sneha P.', 5, 'The coaches here are phenomenal. Super technical, patient, and motivating. My handstand is almost freestanding!', 'Personal Training', 1),
 (3, 'Deepak R.', 5, 'Lost 12kg and gained real strength. Group sessions are intense but the community keeps you going.', 'Group Batch Training', 1);
 
--- ─── Seed: Sample Posts ───────────────────────────────────
+-- â”€â”€â”€ Seed: Sample Posts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 INSERT IGNORE INTO posts (id, author, title, content, post_type, likes) VALUES
-(1, 'Coach Arjun', 'Morning Workout — Handstand Progressions', 'Today session focused on wall handstands and kick-ups. Incredible energy from the 6AM batch!', 'workout', 42),
+(1, 'Coach Arjun', 'Morning Workout â€” Handstand Progressions', 'Today session focused on wall handstands and kick-ups. Incredible energy from the 6AM batch!', 'workout', 42),
 (2, 'Coach Priya', 'Mobility Sunday Highlights', 'Flexibility is the foundation of every advanced skill. Check out how far our members have come in just 3 months!', 'photo', 31),
 (3, 'Coach Rahul', 'New Batch Starting June 1st!', 'Limited slots available for the June morning batch. DM us to secure your spot. Special early-bird pricing for first 10 members!', 'announcement', 67);
+

@@ -1,55 +1,36 @@
-/* src/theme.css — MCI Design Tokens
-   Two independently-designed palettes, not inverted copies of each other. */
-
+/* MCI design tokens: warm premium light theme + high-contrast neutral dark theme. */
 :root {
-  /* ============ LIGHT THEME (default) ============ */
-  /* Luxury / warm / premium */
-  --color-bg:            255 255 255;   /* pure white */
-  --color-bg-secondary:  250 248 245;   /* warm ivory */
-  --color-surface:       255 255 255;   /* card surfaces */
-  --color-surface-alt:   245 241 235;   /* subtle grey-warm surface */
-
-  --color-text:          28 25 23;      /* charcoal */
-  --color-text-muted:    92 85 78;      /* warm grey */
-
-  --color-border:        228 221 210;   /* soft warm border */
-
-  --color-accent:        234 122 8;     /* orange — primary CTA */
+  --color-bg:            255 255 255;
+  --color-bg-secondary:  250 248 245;
+  --color-surface:       255 255 255;
+  --color-surface-alt:   246 242 236;
+  --color-text:          28 25 23;
+  --color-text-muted:    92 85 78;
+  --color-border:        228 221 210;
+  --color-accent:        234 122 8;
   --color-accent-hover:  199 102 4;
-  --color-gold:          182 138 62;    /* premium accent, used sparingly */
-  --color-gold-soft:     212 179 122;   /* champagne */
-
+  --color-gold:          182 138 62;
+  --color-gold-soft:     212 179 122;
   --color-success:       22 163 74;
   --color-danger:        220 38 38;
-
-  --shadow-color: 28 25 23;
+  --color-emphasis:      217 45 32;
+  --shadow-color:       28 25 23;
 }
 
 .dark {
-  /* ============ DARK THEME ============ */
-  /* Cinematic / powerful / navy+royal-blue */
-  --color-bg:            5 8 22;        /* near-black navy, #050816 */
-  --color-bg-secondary:  10 15 34;      /* deep navy */
-  --color-surface:       15 21 43;      /* card surfaces */
-  --color-surface-alt:   21 29 56;
-
-  --color-text:          245 247 250;
-  --color-text-muted:    148 163 184;   /* slate */
-
-  --color-border:        32 41 71;
-
-  --color-accent:        255 122 26;    /* orange — primary CTA, brighter for dark bg */
+  --color-bg:            14 14 14;
+  --color-bg-secondary:  22 22 22;
+  --color-surface:       28 28 28;
+  --color-surface-alt:   38 38 38;
+  --color-text:          250 250 249;
+  --color-text-muted:    180 174 166;
+  --color-border:        63 59 54;
+  --color-accent:        255 122 26;
   --color-accent-hover:  255 143 56;
-  --color-gold:          224 184 108;   /* gold, more saturated on dark */
-  --color-gold-soft:     212 179 122;
-
-  --color-success:       34 197 94;
+  --color-gold:          235 196 116;
+  --color-gold-soft:     219 187 125;
+  --color-success:       74 222 128;
   --color-danger:        248 113 113;
-
-  --shadow-color: 0 0 0;
+  --color-emphasis:      190 30 45;
+  --shadow-color:       0 0 0;
 }
-
-/* Optional occasional-emphasis accent (deep red/burgundy) — use sparingly,
-   e.g. a single "limited slots" badge, never as a section background. */
-:root      { --color-emphasis: 217 45 32; }   /* red */
-.dark      { --color-emphasis: 190 30 45; }   /* burgundy */

@@ -9,6 +9,8 @@ export default function ThemeToggle({ className = "" }) {
 
   return (
     <button
+      data-theme-toggle
+      type="button"
       onClick={toggleTheme}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       aria-pressed={isDark}

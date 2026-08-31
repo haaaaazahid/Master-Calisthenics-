@@ -66,3 +66,34 @@ button{
 button:hover{
   transform:translateY(-3px);
 }
+html, body, #root {
+  background: rgb(var(--color-bg));
+  color: rgb(var(--color-text));
+}
+
+body,
+button,
+input,
+textarea,
+select,
+article,
+section,
+main,
+nav,
+header,
+footer,
+div {
+  transition-property: background-color, color, border-color, box-shadow;
+  transition-duration: 180ms;
+}
+
+button {
+  transition: transform 180ms ease, background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+/* Keep the theme toggle visually stable and always readable. */
+[data-theme-toggle] {
+  color: rgb(var(--color-text));
+  background: rgb(var(--color-surface-alt));
+  border-color: rgb(var(--color-border));
+}

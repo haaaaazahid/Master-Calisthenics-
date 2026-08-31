@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-
-const API =
-  import.meta.env.VITE_API_URL ||
-  "https://script.google.com/macros/s/AKfycbwqo1tAmNyNU5E4Mdkrngn8o8S8NUa8n67Dg2frCMSwGkeQApNGswFfaYz01WV-8g23lQ/exec";
+import { getPosts, likePost as likePostApi, subscribe as subscribeApi } from "../api/api.js";
 
 const typeColors = {
   announcement: {
@@ -224,25 +221,7 @@ export default function Community() {
         setLoading(true);
         setError("");
 
-        /*
-         * Google Apps Script GET:
-         *
-         * /exec?action=posts
-         */
-
-        const response =
-          await fetch(
-            `${API}?action=posts`
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            `Posts API returned ${response.status}`
-          );
-        }
-
-        const data =
-          await response.json();
+        const data = await getPosts();
 
         if (!mounted) {
           return;
@@ -311,15 +290,9 @@ export default function Community() {
 
   /* ==========================================================
      LIKE
-     
-     IMPORTANT:
-     Your current Google Apps Script does NOT contain a
-     likePost action. Therefore we update the UI locally
-     instead of sending the old PATCH request:
-
-     /posts/:id/like
-
-     This prevents broken API calls after the migration.
+     Optimistically bump the like count in the UI, then call the
+     real backend (PATCH /posts/:id/like). If the request fails,
+     roll the optimistic update back.
   ========================================================== */
 
   function handleLike(id) {
@@ -349,18 +322,32 @@ export default function Community() {
       })
     );
 
+    likePostApi(id).catch((err) => {
+      console.error("Like post error:", err);
+
+      // Roll back the optimistic update on failure.
+      setLiked((previous) => {
+        const next = { ...previous };
+        delete next[id];
+        return next;
+      });
+
+      setPosts((previous) =>
+        previous.map((post) => {
+          if (post.id !== id) return post;
+          return { ...post, likes: Math.max(0, getLikes(post.likes) - 1) };
+        })
+      );
+    });
+
   }
 
 
   /* ==========================================================
      SUBSCRIBE
-     
-     IMPORTANT:
-     The current code.gs you provided does not have a
-     "subscribe" action or a Subscribers sheet.
-
-     We therefore don't send a request to a nonexistent
-     /subscribe endpoint.
+     Calls the real backend (POST /subscribe), which stores the
+     subscriber in MySQL. New community posts trigger an email
+     to everyone in that table (see subscriberController.js).
   ========================================================== */
 
   async function handleSubscribe(e) {
@@ -374,27 +361,18 @@ export default function Community() {
     setSubLoading(true);
     setSubStatus(null);
 
-    /*
-     * At the moment the Google Apps Script backend has no
-     * subscription endpoint.
-     *
-     * We keep the UI functional without making a broken
-     * network request.
-     */
-
     try {
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, 500)
-      );
+      await subscribeApi(subEmail.trim(), subName.trim());
 
       setSubStatus("success");
 
       setSubEmail("");
       setSubName("");
 
-    } catch {
+    } catch (err) {
 
+      console.error("Subscribe error:", err);
       setSubStatus("error");
 
     } finally {

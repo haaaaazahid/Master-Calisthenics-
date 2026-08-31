@@ -61,13 +61,7 @@ export default function Programs() {
         setLoading(true);
         setError("");
 
-        /*
-         * apiGet("/programs") converts this into:
-         *
-         * Google Apps Script:
-         * /exec?action=programs
-         */
-
+        // GET {VITE_API_URL}/programs — real Express/MySQL backend.
         const data = await apiGet("/programs");
 
         if (!mounted) return;

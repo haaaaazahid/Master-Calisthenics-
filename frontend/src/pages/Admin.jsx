@@ -1,23 +1,77 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
+// Base URL of the real Express/MySQL backend, INCLUDING the "/api" suffix
+// e.g. https://mci-backend-production.up.railway.app/api
+// Set VITE_API_URL in Vercel's project settings for production.
 const API =
-  import.meta.env.VITE_API_URL ||
-  "https://script.google.com/macros/s/AKfycbwqo1tAmNyNU5E4Mdkrngn8o8S8NUa8n67Dg2frCMSwGkeQApNGswFfaYz01WV-8g23lQ/exec";
+  (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
 const GOOGLE_CLIENT_ID = "884795861510-pf6h5obqhf35cjpfq3ebicqg75f53kbm.apps.googleusercontent.com";
+let googleScriptPromise = null;
+let googleInitialized = false;
 
-/* ─── helpers ─────────────────────────────────────────── */
+/* --- helpers ------------------------------------------- */
 function getToken() { return localStorage.getItem("mci_token") || ""; }
 function authH()    { return { Authorization: `Bearer ${getToken()}` }; }
 function jsonH()    { return { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` }; }
 
+/*
+ * Safe API helper:
+ * - never blindly calls response.json()
+ * - handles empty/non-JSON 404/500 responses
+ * - automatically adds the current JWT
+ * - keeps FormData requests free of a forced Content-Type
+ */
 async function apiFetch(path, opts = {}) {
-  const res = await fetch(`${API}${path}`, opts);
-  return res.json();
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${API}${cleanPath}`;
+  const token = getToken();
+
+  const headers = {
+    ...(opts.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(opts.headers || {}),
+  };
+
+  let res;
+  try {
+    res = await fetch(url, { ...opts, headers });
+  } catch (error) {
+    const err = new Error(`Could not reach backend API at ${API}. Make sure the backend is running.`);
+    err.cause = error;
+    err.networkError = true;
+    throw err;
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  let data = null;
+
+  try {
+    if (contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      const raw = await res.text();
+      data = raw ? { message: raw } : null;
+    }
+  } catch {
+    data = null;
+  }
+
+  if (!res.ok) {
+    const err = new Error(
+      data?.message || data?.error || `Request failed with HTTP ${res.status}`
+    );
+    err.status = res.status;
+    err.data = data;
+    err.authError = res.status === 401 || res.status === 403;
+    throw err;
+  }
+
+  return data || { success: true };
 }
 
-const statusColor = { pending: "bg-yellow-500/20 text-yellow-400", confirmed: "bg-green-500/20 text-green-400", cancelled: "bg-red-500/20 text-red-400", completed: "bg-blue-500/20 text-blue-400" };
+const statusColor = { pending: "bg-yellow-500/20 text-yellow-400", confirmed: "bg-green-500/20 text-green-400", cancelled: "bg-red-500/20 text-red-400", completed: "bg-accent/10 text-accent" };
 
-/* ─── MAIN COMPONENT ───────────────────────────────────── */
+/* --- MAIN COMPONENT ------------------------------------- */
 export default function Admin() {
   const [token, setToken]   = useState(() => localStorage.getItem("mci_token") || "");
   const [admin, setAdmin]   = useState(() => { try { return JSON.parse(localStorage.getItem("mci_admin") || "null"); } catch { return null; } });
@@ -66,29 +120,150 @@ const [bookingTotalPages, setBookingTotalPages] = useState(1);
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
   const [pwMsg, setPwMsg]   = useState(null);
 
-  /* ── Google Sign-In init ── */
-  useEffect(() => {
-    if (token) return;
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.onload = () => {
-      window.google?.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleLogin,
-      });
-      window.google?.accounts.id.renderButton(
-        document.getElementById("google-signin-btn"),
-        { theme: "filled_black", size: "large", text: "signin_with", shape: "rectangular", width: 300 }
-      );
-    };
-    document.body.appendChild(script);
-  }, [token]);
+  /* -- Google Sign-In init -- */
+  const handleGoogleLogin = useCallback(async (response) => {
+    if (!response?.credential) {
+      setLoginErr("Google did not return a valid credential.");
+      return;
+    }
 
-  /* ── Load data on tab change ── */
+    try {
+      setLoginLoading(true);
+      setLoginErr("");
+
+      const data = await apiFetch("/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          credential: response.credential,
+        }),
+      });
+
+      if (!data?.success || !data?.token) {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            "Google account is not authorized."
+        );
+      }
+
+      localStorage.setItem("mci_token", data.token);
+      localStorage.setItem(
+        "mci_admin",
+        JSON.stringify(data.admin || null)
+      );
+      setToken(data.token);
+      setAdmin(data.admin || null);
+    } catch (error) {
+      console.error("Google login error:", error);
+      setLoginErr(
+        error?.message || "Google login failed."
+      );
+    } finally {
+      setLoginLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (token || googleInitialized) return;
+
+    let cancelled = false;
+
+    const loadGoogleScript = () => {
+      if (window.google?.accounts?.id) {
+        return Promise.resolve();
+      }
+
+      if (googleScriptPromise) {
+        return googleScriptPromise;
+      }
+
+      googleScriptPromise = new Promise((resolve, reject) => {
+        const existing = document.getElementById("mci-google-script");
+
+        if (existing) {
+          if (window.google?.accounts?.id) {
+            resolve();
+            return;
+          }
+
+          existing.addEventListener("load", () => resolve(), {
+            once: true,
+          });
+          existing.addEventListener("error", reject, {
+            once: true,
+          });
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.id = "mci-google-script";
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = resolve;
+        script.onerror = reject;
+
+        document.head.appendChild(script);
+      });
+
+      return googleScriptPromise;
+    };
+
+    loadGoogleScript()
+      .then(() => {
+        if (cancelled || token || googleInitialized) return;
+
+        const container = document.getElementById(
+          "google-signin-btn"
+        );
+
+        if (!window.google?.accounts?.id || !container) {
+          return;
+        }
+
+        if (!googleInitialized) {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleLogin,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+
+          googleInitialized = true;
+        }
+
+        container.innerHTML = "";
+
+        window.google.accounts.id.renderButton(
+          container,
+          {
+            theme: "filled_black",
+            size: "large",
+            text: "signin_with",
+            shape: "rectangular",
+            width: 300,
+          }
+        );
+      })
+      .catch((error) => {
+        console.error("Google Identity Services load error:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, handleGoogleLogin]);
+
+  /* -- Load data on tab change -- */
+  const loadRequestRef = useRef(0);
+
   useEffect(() => {
     if (!token) return;
+
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
+
     const loaders = {
       dashboard: () => apiFetch("/admin/dashboard", { headers: jsonH() }).then(d => { if (d.success) setDash(d); }),
 bookings: () => {
@@ -121,30 +296,74 @@ bookings: () => {
       trainers:  () => apiFetch("/admin/trainers",  { headers: jsonH() }).then(d => { if (d.success) setTrainers(d.trainers); }),
       gallery:   () => apiFetch("/admin/gallery",   { headers: jsonH() }).then(d => { if (d.success) setGallery(d.folders); }),
     };
-    (loaders[tab] || loaders.dashboard)().finally(() => setLoading(false));
-}, [tab, token, bookingSearch, bookingStatus, bookingPage]);
-  /* ── Auth ── */
+    (loaders[tab] || loaders.dashboard)()
+      .catch((error) => {
+        console.error("Admin data load error:", error);
+
+        if (
+          error?.status === 401 ||
+          error?.status === 403
+        ) {
+          logout();
+        }
+      })
+      .finally(() => {
+        if (requestId === loadRequestRef.current) {
+          setLoading(false);
+        }
+      });
+  }, [
+    tab,
+    token,
+    bookingSearch,
+    bookingStatus,
+    bookingPage,
+    logout,
+  ]);
+  /* -- Auth -- */
   async function handleLogin(e) {
     e.preventDefault();
-    setLoginLoading(true); setLoginErr("");
-    const data = await apiFetch("/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password: pass }) });
-    setLoginLoading(false);
-    if (data.success) {
-      localStorage.setItem("mci_token", data.token);
-      localStorage.setItem("mci_admin", JSON.stringify(data.admin));
-      setToken(data.token); setAdmin(data.admin);
-    } else { setLoginErr(data.message || "Login failed"); }
-  }
-
-  async function handleGoogleLogin(response) {
     setLoginLoading(true);
-    const data = await apiFetch("/auth/google", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ credential: response.credential }) });
-    setLoginLoading(false);
-    if (data.success) {
+    setLoginErr("");
+
+    try {
+      const data = await apiFetch("/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: pass,
+        }),
+      });
+
+      if (!data?.success || !data?.token) {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            "Login failed"
+        );
+      }
+
       localStorage.setItem("mci_token", data.token);
-      localStorage.setItem("mci_admin", JSON.stringify(data.admin));
-      setToken(data.token); setAdmin(data.admin);
-    } else { setLoginErr(data.message || "Google login failed — account not authorized."); }
+      localStorage.setItem(
+        "mci_admin",
+        JSON.stringify(data.admin || null)
+      );
+
+      setToken(data.token);
+      setAdmin(data.admin || null);
+      setPass("");
+    } catch (error) {
+      console.error("Admin login error:", error);
+      setLoginErr(
+        error?.message ||
+          "Unable to sign in. Please try again."
+      );
+    } finally {
+      setLoginLoading(false);
+    }
   }
 
   function logout() {
@@ -152,21 +371,74 @@ bookings: () => {
     setToken(""); setAdmin(null); setTab("dashboard");
   }
 
-  /* ── Posts ── */
+  /* -- Posts -- */
   async function createPost(e) {
-    e.preventDefault(); setPostLoading(true);
-    const fd = new FormData();
-    fd.append("title", newPost.title); fd.append("content", newPost.content);
-    fd.append("author", newPost.author || admin?.name || "Coach");
-    fd.append("post_type", newPost.post_type);
-    if (newPost.video_url) fd.append("video_url", newPost.video_url);
-    if (newPost.imageFile) fd.append("image", newPost.imageFile);
-    const data = await fetch(`${API}/admin/posts`, { method: "POST", headers: authH(), body: fd }).then(r => r.json());
-    setPostLoading(false);
-    if (data.success) {
-      setNewPost({ title: "", content: "", author: "", post_type: "announcement", video_url: "", imageFile: null, preview: null });
-      const d = await apiFetch("/posts"); if (d.success) setPosts(d.posts);
+    e.preventDefault();
+    setPostLoading(true);
+    setLoginErr("");
+
+    try {
+      const fd = new FormData();
+
+      fd.append("title", newPost.title);
+      fd.append("content", newPost.content);
+      fd.append(
+        "author",
+        newPost.author || admin?.name || "Coach"
+      );
+      fd.append("post_type", newPost.post_type);
+
+      if (newPost.video_url) {
+        fd.append("video_url", newPost.video_url);
+      }
+
+      if (newPost.imageFile) {
+        fd.append("image", newPost.imageFile);
+      }
+
+      const data = await apiFetch("/admin/posts", {
+        method: "POST",
+        body: fd,
+      });
+
+      if (data?.success) {
+        setNewPost({
+          title: "",
+          content: "",
+          author: "",
+          post_type: "announcement",
+          video_url: "",
+          imageFile: null,
+          preview: null,
+        });
+
+        const d = await apiFetch("/admin/posts");
+        if (d?.success) {
+          setPosts(d.posts || []);
+        }
+      } else {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            "Failed to create post."
+        );
+      }
+    } catch (error) {
+      console.error("Create post error:", error);
+
+      if (error?.status === 401 || error?.status === 403) {
+        logout();
+        return;
+      }
+
+      setPostLoading(false);
+      window.alert(
+        error?.message || "Failed to create post."
+      );
+      return;
     }
+
+    setPostLoading(false);
   }
 
   async function deletePost(id) {
@@ -181,7 +453,7 @@ bookings: () => {
     if (d.success) setPosts(d.posts || []);
   }
 
-  /* ── Bookings ── */
+  /* -- Bookings -- */
   async function updateBooking(id, status) {
     await apiFetch(`/admin/bookings/${id}`, { method: "PATCH", headers: jsonH(), body: JSON.stringify({ status }) });
     setBookings(b => b.map(x => x.id === id ? { ...x, status } : x));
@@ -192,7 +464,7 @@ bookings: () => {
     setBookings(b => b.filter(x => x.id !== id));
   }
 
-  /* ── Reviews ── */
+  /* -- Reviews -- */
   async function approveReview(id) {
     await apiFetch(`/admin/reviews/${id}/approve`, { method: "PATCH", headers: jsonH() });
     setReviews(r => r.map(x => x.id === id ? { ...x, status: "approved" } : x));
@@ -207,7 +479,7 @@ bookings: () => {
     setReviews(r => r.filter(x => x.id !== id));
   }
 
-  /* ── Contacts ── */
+  /* -- Contacts -- */
   async function markRead(id) {
     await apiFetch(`/admin/contacts/${id}/read`, { method: "PATCH", headers: jsonH() });
     setContacts(c => c.map(x => x.id === id ? { ...x, is_read: 1 } : x));
@@ -218,25 +490,109 @@ bookings: () => {
     setContacts(c => c.filter(x => x.id !== id));
   }
 
-  /* ── Trainers ── */
+  /* -- Trainers -- */
   async function createTrainer(e) {
     e.preventDefault();
-    const fd = new FormData();
-    fd.append("name", newTrainer.name); fd.append("role", newTrainer.role); fd.append("bio", newTrainer.bio);
-    if (newTrainer.imageFile) fd.append("image", newTrainer.imageFile);
-    const data = await fetch(`${API}/admin/trainers`, { method: "POST", headers: authH(), body: fd }).then(r => r.json());
-    if (data.success) {
-      setNewTrainer({ name: "", role: "", bio: "", imageFile: null, preview: null });
-      const d = await apiFetch("/admin/trainers", { headers: jsonH() }); if (d.success) setTrainers(d.trainers);
+
+    try {
+      const fd = new FormData();
+
+      fd.append("name", newTrainer.name);
+      fd.append("role", newTrainer.role);
+      fd.append("bio", newTrainer.bio);
+
+      if (newTrainer.imageFile) {
+        fd.append("image", newTrainer.imageFile);
+      }
+
+      const data = await apiFetch("/admin/trainers", {
+        method: "POST",
+        body: fd,
+      });
+
+      if (data?.success) {
+        setNewTrainer({
+          name: "",
+          role: "",
+          bio: "",
+          imageFile: null,
+          preview: null,
+        });
+
+        const d = await apiFetch("/admin/trainers");
+        if (d?.success) {
+          setTrainers(d.trainers || []);
+        }
+      } else {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            "Failed to create trainer."
+        );
+      }
+    } catch (error) {
+      console.error("Create trainer error:", error);
+
+      if (error?.status === 401 || error?.status === 403) {
+        logout();
+        return;
+      }
+
+      window.alert(
+        error?.message ||
+          "Failed to create trainer."
+      );
     }
   }
   async function deleteTrainer(id) {
-    if (!confirm("Delete trainer?")) return;
-    await apiFetch(`/admin/trainers/${id}`, { method: "DELETE", headers: jsonH() });
-    setTrainers(t => t.filter(x => x.id !== id));
+    if (!window.confirm("Delete this trainer permanently?")) return;
+
+    try {
+      const data = await apiFetch(
+        `/admin/trainers/${id}`,
+        {
+          method: "DELETE",
+          headers: jsonH(),
+        }
+      );
+
+      if (!data?.success) {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            "The server could not delete this trainer."
+        );
+      }
+
+      setTrainers((current) =>
+        current.filter(
+          (trainer) => trainer.id !== id
+        )
+      );
+
+      window.alert("Trainer deleted successfully.");
+    } catch (error) {
+      console.error(
+        "Delete trainer error:",
+        error
+      );
+
+      if (
+        error?.status === 401 ||
+        error?.status === 403
+      ) {
+        logout();
+        return;
+      }
+
+      window.alert(
+        error?.message ||
+          "Failed to delete trainer."
+      );
+    }
   }
 
-  /* ── Gallery ── */
+  /* -- Gallery -- */
   async function createFolder(e) {
     e.preventDefault();
     const data = await apiFetch("/admin/gallery/folders", { method: "POST", headers: jsonH(), body: JSON.stringify({ name: newFolder }) });
@@ -251,13 +607,67 @@ bookings: () => {
     setGallery(g => g.filter(x => x.id !== id));
   }
   async function uploadPhoto(folderId, file, caption = "") {
-    setUploadingPhoto(p => ({ ...p, [folderId]: true }));
-    const fd = new FormData();
-    fd.append("folder_id", folderId); fd.append("image", file); if (caption) fd.append("caption", caption);
-    const data = await fetch(`${API}/admin/gallery/photos`, { method: "POST", headers: authH(), body: fd }).then(r => r.json());
-    setUploadingPhoto(p => ({ ...p, [folderId]: false }));
-    if (data.success) {
-      const d = await apiFetch("/admin/gallery", { headers: jsonH() }); if (d.success) setGallery(d.folders);
+    setUploadingPhoto((p) => ({
+      ...p,
+      [folderId]: true,
+    }));
+
+    try {
+      const fd = new FormData();
+
+      fd.append("folder_id", folderId);
+      fd.append("image", file);
+
+      if (caption) {
+        fd.append("caption", caption);
+      }
+
+      const data = await apiFetch(
+        "/admin/gallery/photos",
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
+
+      if (data?.success) {
+        const d = await apiFetch(
+          "/admin/gallery"
+        );
+
+        if (d?.success) {
+          setGallery(d.folders || []);
+        }
+      } else {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            "Failed to upload photo."
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Gallery upload error:",
+        error
+      );
+
+      if (
+        error?.status === 401 ||
+        error?.status === 403
+      ) {
+        logout();
+        return;
+      }
+
+      window.alert(
+        error?.message ||
+          "Failed to upload photo."
+      );
+    } finally {
+      setUploadingPhoto((p) => ({
+        ...p,
+        [folderId]: false,
+      }));
     }
   }
   async function deletePhoto(id) {
@@ -266,7 +676,7 @@ bookings: () => {
     setGallery(g => g.map(folder => ({ ...folder, photos: folder.photos.filter(p => p.id !== id) })));
   }
 
-  /* ── Change Password ── */
+  /* -- Change Password -- */
   async function changePassword(e) {
     e.preventDefault(); setPwMsg(null);
     if (pwForm.newPw !== pwForm.confirm) { setPwMsg({ type: "error", text: "Passwords don't match" }); return; }
@@ -290,7 +700,7 @@ bookings: () => {
     return matchesSearch && matchesRead;
   });
 
-  /* ─────────── LOGIN SCREEN ─────────── */
+  /* ----------- LOGIN SCREEN ----------- */
   if (!token) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center px-4">
@@ -328,26 +738,30 @@ bookings: () => {
             <div className="flex justify-center">
               <div id="google-signin-btn" />
             </div>
+
+            <p className="text-center text-xs text-text-muted mt-4 break-all">
+              API: {API}
+            </p>
           </div>
         </div>
       </div>
     );
   }
 
-  /* ─────────── TABS ─────────── */
+  /* ----------- TABS ----------- */
   const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: "📊" },
-    { id: "posts",     label: "Posts",     icon: "📝" },
-    { id: "bookings",  label: "Bookings",  icon: "📅" },
-    { id: "reviews",   label: "Reviews",   icon: "⭐" },
-    { id: "contacts",  label: "Messages",  icon: "✉️" },
-    { id: "trainers",  label: "Trainers",  icon: "👥" },
-    { id: "gallery",   label: "Gallery",   icon: "🖼️" },
-    { id: "settings",  label: "Settings",  icon: "⚙️" },
+    { id: "dashboard", label: "Dashboard", icon: "D" },
+    { id: "posts",     label: "Posts",     icon: "P" },
+    { id: "bookings",  label: "Bookings",  icon: "B" },
+    { id: "reviews",   label: "Reviews",   icon: "R" },
+    { id: "contacts",  label: "Messages",  icon: "M" },
+    { id: "trainers",  label: "Trainers",  icon: "T" },
+    { id: "gallery",   label: "Gallery",   icon: "G" },
+    { id: "settings",  label: "Settings",  icon: "S" },
   ];
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-bg text-text overflow-x-hidden">
 
       {/* TOP BAR */}
       <div className="bg-surface border-b border-border px-6 py-4 flex justify-between items-center sticky top-0 z-40">
@@ -397,9 +811,9 @@ bookings: () => {
         </div>
 
         {/* CONTENT */}
-        <main className="flex-1 p-6 md:p-8 pb-24 md:pb-8 overflow-auto">
+        <main className="min-w-0 flex-1 p-6 md:p-8 pb-24 md:pb-8 overflow-auto">
 
-          {/* ── DASHBOARD ── */}
+          {/* -- DASHBOARD -- */}
           {tab === "dashboard" && (
             <div>
               <h2 className="text-2xl font-black mb-8">OVERVIEW</h2>
@@ -425,7 +839,7 @@ bookings: () => {
                         <div key={b.id} className="flex justify-between items-center py-3 border-b border-border last:border-0">
                           <div>
                             <p className="font-medium text-sm">{b.name}</p>
-                            <p className="text-xs text-text-muted">{b.session_time} · {b.program}</p>
+                            <p className="text-xs text-text-muted">{b.session_time}  |  {b.program}</p>
                           </div>
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[b.status] || "bg-gray-500/20 text-text-muted"}`}>
                             {b.status}
@@ -455,7 +869,7 @@ bookings: () => {
             </div>
           )}
 
-          {/* ── POSTS ── */}
+          {/* -- POSTS -- */}
           {tab === "posts" && (
             <div>
               <h2 className="text-2xl font-black mb-8">POSTS</h2>
@@ -486,10 +900,10 @@ bookings: () => {
                       value={newPost.post_type} onChange={e => setNewPost(p => ({ ...p, post_type: e.target.value }))}
                       className="bg-bg border border-border rounded-xl px-4 py-3 text-sm text-text focus:outline-none focus:border-orange-500 transition"
                     >
-                      <option value="announcement">📢 Announcement</option>
-                      <option value="workout">💪 Workout</option>
-                      <option value="photo">📸 Photo</option>
-                      <option value="video">🎥 Video</option>
+                      <option value="announcement">Announcement</option>
+                      <option value="workout">Workout</option>
+                      <option value="photo">Photo</option>
+                      <option value="video">Video</option>
                     </select>
                     <input
                       type="text" placeholder="YouTube URL (optional)" value={newPost.video_url}
@@ -517,7 +931,7 @@ bookings: () => {
                       </div>
                     ) : (
                       <>
-                        <p className="text-text-muted text-sm">📷 Click to upload a photo</p>
+                        <p className="text-text-muted text-sm">Click to upload a photo</p>
                         <p className="text-text-muted text-xs mt-1">JPG, PNG, WebP up to 10MB</p>
                       </>
                     )}
@@ -527,15 +941,14 @@ bookings: () => {
                     type="submit" disabled={postLoading}
                     className="bg-orange-500 hover:bg-orange-600 disabled:opacity-60 transition text-white font-bold px-8 py-3 rounded-xl"
                   >
-                    {postLoading ? "Publishing..." : "Publish Post 🚀"}
+                    {postLoading ? "Publishing..." : "Publish Post "}
                   </button>
                 </form>
               </div>
 
               {/* Post List */}
               <div className="space-y-4">
-                {loading ? <div className="bg-surface rounded-2xl h-32 animate-pulse" /> :
-                posts.length === 0 ? <p className="text-text-muted text-center py-12">No posts yet. Create your first post above!</p> :
+                {posts.length === 0 ? <p className="text-text-muted text-center py-12">No posts yet. Create your first post above!</p> :
                 posts.map(post => (
                   <div key={post.id} className="bg-surface border border-border rounded-2xl p-5 flex gap-4">
                     {post.image_url && (
@@ -545,7 +958,7 @@ bookings: () => {
                       <div className="flex items-start justify-between gap-2 flex-wrap">
                         <div>
                           <h4 className="font-bold leading-snug">{post.title}</h4>
-                          <p className="text-xs text-text-muted mt-0.5">{post.author} · {post.post_type}</p>
+                          <p className="text-xs text-text-muted mt-0.5">{post.author}  |  {post.post_type}</p>
                         </div>
                         <div className="flex gap-2">
                           <button onClick={() => togglePost(post.id)} className={`text-xs px-3 py-1.5 rounded-xl font-medium transition ${post.published ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-gray-500/20 text-text-muted hover:bg-gray-500/30"}`}>
@@ -557,7 +970,7 @@ bookings: () => {
                         </div>
                       </div>
                       <p className="text-text-muted text-xs mt-2 line-clamp-2">{post.content}</p>
-                      <p className="text-xs text-text-muted mt-1">❤️ {post.likes} likes</p>
+                      <p className="text-xs text-text-muted mt-1">Likes: {post.likes} likes</p>
                     </div>
                   </div>
                 ))}
@@ -565,7 +978,7 @@ bookings: () => {
             </div>
           )}
 
-          {/* ── BOOKINGS ── */}
+          {/* -- BOOKINGS -- */}
           {tab === "bookings" && (
             <div>
               <h2 className="text-2xl font-black mb-8">BOOKINGS</h2>
@@ -579,9 +992,8 @@ bookings: () => {
                       value={bookingSearch}
                       onChange={(e) => { setBookingSearch(e.target.value); setBookingPage(1); }}
                       placeholder="Search name, phone, email, program..."
-                      className="w-full bg-bg border border-border rounded-xl px-4 py-3 pl-11 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
+                      className="w-full bg-bg border border-border rounded-xl px-4 py-3 pl-4 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">🔍</span>
                   </div>
 
                   <select
@@ -612,8 +1024,7 @@ bookings: () => {
                 </div>
               </div>
 
-              {loading ? <div className="animate-pulse space-y-3">{[1,2,3].map(i => <div key={i} className="bg-surface h-24 rounded-2xl" />)}</div> :
-              bookings.length === 0 ? <p className="text-text-muted text-center py-16">No bookings match your search.</p> :
+              {bookings.length === 0 ? <p className="text-text-muted text-center py-16">No bookings match your search.</p> :
               <div className="space-y-4">
                 {bookings.map(b => (
                   <div key={b.id} className="bg-surface border border-border rounded-2xl p-5">
@@ -621,11 +1032,11 @@ bookings: () => {
                       <div>
                         <p className="font-bold text-lg">{b.name}</p>
                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-text-muted">
-                          <span>📞 {b.phone}</span>
-                          {b.email && <span>✉️ {b.email}</span>}
-                          <span>⏰ {b.session_time}</span>
-                          {b.program && <span>🏋️ {b.program}</span>}
-                          {b.preferred_date && <span>📅 {b.preferred_date}</span>}
+                          <span>Phone: {b.phone}</span>
+                          {b.email && <span>Email: {b.email}</span>}
+                          <span>Time: {b.session_time}</span>
+                          {b.program && <span>Program: {b.program}</span>}
+                          {b.preferred_date && <span>Date: {b.preferred_date}</span>}
                           {b.one_week_offer ? <span className="text-orange-400">1-Week Trial ₹499</span> : null}
                         </div>
                         {b.message && <p className="text-text-muted text-sm mt-2 italic">"{b.message}"</p>}
@@ -660,7 +1071,7 @@ bookings: () => {
                     onClick={() => setBookingPage((p) => Math.max(1, p - 1))}
                     className="px-4 py-2 rounded-xl border border-border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500 transition"
                   >
-                    ← Previous
+                    Previous
                   </button>
                   <span className="text-sm text-text-muted">
                     Page {bookingPage} of {bookingTotalPages}
@@ -671,19 +1082,18 @@ bookings: () => {
                     onClick={() => setBookingPage((p) => Math.min(bookingTotalPages, p + 1))}
                     className="px-4 py-2 rounded-xl border border-border text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-orange-500 transition"
                   >
-                    Next →
+                    Next
                   </button>
                 </div>
               )}
             </div>
           )}
 
-          {/* ── REVIEWS ── */}
+          {/* -- REVIEWS -- */}
           {tab === "reviews" && (
             <div>
               <h2 className="text-2xl font-black mb-8">REVIEWS</h2>
-              {loading ? <div className="animate-pulse space-y-3">{[1,2,3].map(i => <div key={i} className="bg-surface h-24 rounded-2xl" />)}</div> :
-              reviews.length === 0 ? <p className="text-text-muted text-center py-16">No reviews yet.</p> :
+              {reviews.length === 0 ? <p className="text-text-muted text-center py-16">No reviews yet.</p> :
               <div className="space-y-4">
                 {reviews.map(r => (
                   <div key={r.id} className="bg-surface border border-border rounded-2xl p-5">
@@ -691,7 +1101,7 @@ bookings: () => {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-1">
                           <p className="font-bold">{r.name}</p>
-                          <div className="flex gap-0.5">{[...Array(r.rating)].map((_,j) => <span key={j} className="text-orange-400">★</span>)}</div>
+                          <div className="flex gap-0.5">{[...Array(r.rating)].map((_,j) => <span key={j} className="text-orange-400">*</span>)}</div>
                         </div>
                         {r.program && <p className="text-xs text-text-muted mb-2">{r.program}</p>}
                         <p className="text-text-muted text-sm leading-relaxed">"{r.review}"</p>
@@ -705,12 +1115,12 @@ bookings: () => {
                     <div className="flex gap-2 mt-4">
                       {r.status !== "approved" && (
                         <button onClick={() => approveReview(r.id)} className="text-xs px-3 py-1.5 rounded-xl bg-green-500/20 text-green-400 hover:bg-green-500/30 transition font-medium">
-                          ✓ Approve
+                          Approve
                         </button>
                       )}
                       {r.status !== "rejected" && (
                         <button onClick={() => rejectReview(r.id)} className="text-xs px-3 py-1.5 rounded-xl bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition font-medium">
-                          ✗ Reject
+                          Reject
                         </button>
                       )}
                       <button onClick={() => deleteReview(r.id)} className="text-xs px-3 py-1.5 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition font-medium ml-auto">
@@ -723,7 +1133,7 @@ bookings: () => {
             </div>
           )}
 
-          {/* ── CONTACTS ── */}
+          {/* -- CONTACTS -- */}
           {tab === "contacts" && (
             <div>
               <h2 className="text-2xl font-black mb-8">MESSAGES</h2>
@@ -737,9 +1147,8 @@ bookings: () => {
                       value={contactSearch}
                       onChange={(e) => setContactSearch(e.target.value)}
                       placeholder="Search name, email, phone, message..."
-                      className="w-full bg-bg border border-border rounded-xl px-4 py-3 pl-11 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
+                      className="w-full bg-bg border border-border rounded-xl px-4 py-3 pl-4 text-sm text-text placeholder-text-muted focus:outline-none focus:border-orange-500 transition"
                     />
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">🔍</span>
                   </div>
 
                   <select
@@ -767,8 +1176,7 @@ bookings: () => {
                 </div>
               </div>
 
-              {loading ? <div className="animate-pulse space-y-3">{[1,2].map(i => <div key={i} className="bg-surface h-24 rounded-2xl" />)}</div> :
-              filteredContacts.length === 0 ? <p className="text-text-muted text-center py-16">No messages match your search.</p> :
+              {filteredContacts.length === 0 ? <p className="text-text-muted text-center py-16">No messages match your search.</p> :
               <div className="space-y-4">
                 {filteredContacts.map(c => (
                   <div key={c.id} className={`bg-surface border rounded-2xl p-5 ${c.is_read ? "border-border" : "border-orange-500/30"}`}>
@@ -787,7 +1195,7 @@ bookings: () => {
                     </div>
                     <div className="flex gap-2 mt-4">
                       {!c.is_read && (
-                        <button onClick={() => markRead(c.id)} className="text-xs px-3 py-1.5 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition font-medium">
+                        <button onClick={() => markRead(c.id)} className="text-xs px-3 py-1.5 rounded-xl bg-accent/10 text-accent hover:bg-accent/20 transition font-medium">
                           Mark Read
                         </button>
                       )}
@@ -804,7 +1212,7 @@ bookings: () => {
             </div>
           )}
 
-          {/* ── TRAINERS ── */}
+          {/* -- TRAINERS -- */}
           {tab === "trainers" && (
             <div>
               <h2 className="text-2xl font-black mb-8">TRAINERS</h2>
@@ -847,7 +1255,7 @@ bookings: () => {
                       </div>
                     ) : (
                       <>
-                        <p className="text-text-muted text-sm">👤 Upload trainer photo</p>
+                        <p className="text-text-muted text-sm">Upload trainer photo</p>
                         <p className="text-text-muted text-xs mt-1">Recommended: square crop</p>
                       </>
                     )}
@@ -860,15 +1268,20 @@ bookings: () => {
 
               {/* Trainer List */}
               <div className="grid md:grid-cols-3 gap-5">
-                {loading ? [1,2,3].map(i => <div key={i} className="bg-surface h-60 rounded-2xl animate-pulse" />) :
-                trainers.length === 0 ? <p className="text-text-muted col-span-3 text-center py-12">No trainers added yet.</p> :
+                {trainers.length === 0 ? (
+                  loading ? (
+                    <p className="text-text-muted col-span-3 text-center py-12">Loading trainers...</p>
+                  ) : (
+                    <p className="text-text-muted col-span-3 text-center py-12">No trainers added yet.</p>
+                  )
+                ) :
                 trainers.map(t => (
                   <div key={t.id} className="bg-surface border border-border rounded-2xl overflow-hidden">
                     {t.image_url ? (
                       <img src={t.image_url} alt={t.name} className="w-full h-48 object-cover" />
                     ) : (
                       <div className="h-48 bg-gradient-to-br from-orange-500/10 to-orange-900/10 flex items-center justify-center">
-                        <span className="text-6xl opacity-30">👤</span>
+                        <span className="text-5xl opacity-30">Trainer</span>
                       </div>
                     )}
                     <div className="p-5">
@@ -885,7 +1298,7 @@ bookings: () => {
             </div>
           )}
 
-          {/* ── GALLERY ── */}
+          {/* -- GALLERY -- */}
           {tab === "gallery" && (
             <div>
               <h2 className="text-2xl font-black mb-8">GALLERY</h2>
@@ -906,8 +1319,7 @@ bookings: () => {
               </div>
 
               {/* Folders */}
-              {loading ? <div className="animate-pulse space-y-4">{[1,2].map(i => <div key={i} className="bg-surface h-40 rounded-2xl" />)}</div> :
-              gallery.length === 0 ? <p className="text-text-muted text-center py-12">No folders yet. Create one above!</p> :
+              {gallery.length === 0 ? <p className="text-text-muted text-center py-12">No folders yet. Create one above!</p> :
               <div className="space-y-8">
                 {gallery.map(folder => (
                   <div key={folder.id} className="bg-surface border border-border rounded-2xl p-6">
@@ -942,7 +1354,7 @@ bookings: () => {
                               onClick={() => deletePhoto(photo.id)}
                               className="absolute top-1 right-1 bg-black/70 text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition hover:bg-red-500/80"
                             >
-                              ✕
+                              X
                             </button>
                           </div>
                         ))}
@@ -958,14 +1370,14 @@ bookings: () => {
             </div>
           )}
 
-          {/* ── SETTINGS ── */}
+          {/* -- SETTINGS -- */}
           {tab === "settings" && (
             <div className="max-w-lg">
               <h2 className="text-2xl font-black mb-8">SETTINGS</h2>
 
               <div className="bg-surface border border-border rounded-2xl p-6 mb-6">
                 <h3 className="font-bold text-orange-400 mb-1">Account</h3>
-                <p className="text-text-muted text-sm mb-5">Logged in as {admin?.name} · {admin?.email}</p>
+                <p className="text-text-muted text-sm mb-5">Logged in as {admin?.name}  |  {admin?.email}</p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400 font-bold text-xl">
                     {admin?.name?.charAt(0)}
