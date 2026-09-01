@@ -56,15 +56,34 @@ const {
 
 /* ============================================================
    OTHER
+   Contacts
+   Programs
+   Offers
+   Dashboard
 ============================================================ */
 
 const {
+  /* Contacts */
   submitContact,
   getAllContacts,
   markRead,
   deleteContact,
+
+  /* Programs */
   getPrograms,
+  getAllPrograms,
+  createProgram,
   updateProgram,
+  deleteProgram,
+
+  /* Offers */
+  getOffers,
+  getAllOffers,
+  createOffer,
+  updateOffer,
+  deleteOffer,
+
+  /* Dashboard */
   getDashboard,
 } = require("../controllers/otherControllers");
 
@@ -133,13 +152,28 @@ router.post(
    PUBLIC ROUTES
 ============================================================ */
 
-/* Programs */
+/* -----------------------------
+   PROGRAMS
+----------------------------- */
+
 router.get(
   "/programs",
   getPrograms
 );
 
-/* Reviews */
+/* -----------------------------
+   OFFERS
+----------------------------- */
+
+router.get(
+  "/offers",
+  getOffers
+);
+
+/* -----------------------------
+   REVIEWS
+----------------------------- */
+
 router.get(
   "/reviews",
   getApprovedReviews
@@ -150,7 +184,10 @@ router.post(
   submitReview
 );
 
-/* Posts */
+/* -----------------------------
+   COMMUNITY POSTS
+----------------------------- */
+
 router.get(
   "/posts",
   getPosts
@@ -161,31 +198,46 @@ router.patch(
   likePost
 );
 
-/* Bookings */
+/* -----------------------------
+   BOOKINGS
+----------------------------- */
+
 router.post(
   "/bookings",
   createBooking
 );
 
-/* Contact */
+/* -----------------------------
+   CONTACT
+----------------------------- */
+
 router.post(
   "/contact",
   submitContact
 );
 
-/* Trainers */
+/* -----------------------------
+   TRAINERS
+----------------------------- */
+
 router.get(
   "/trainers",
   getTrainers
 );
 
-/* Gallery */
+/* -----------------------------
+   GALLERY
+----------------------------- */
+
 router.get(
   "/gallery",
   getFolders
 );
 
-/* Subscribers */
+/* -----------------------------
+   SUBSCRIBERS
+----------------------------- */
+
 router.post(
   "/subscribe",
   subscribe
@@ -263,7 +315,7 @@ router.delete(
 );
 
 /* ============================================================
-   ADMIN — POSTS
+   ADMIN — COMMUNITY POSTS
 ============================================================ */
 
 router.get(
@@ -318,19 +370,69 @@ router.delete(
 ============================================================ */
 
 /*
- * Existing program support:
- *
- * GET  /api/programs
- * PUT  /api/admin/programs/:id
- *
- * Add/create and delete will be added once the corresponding
- * controller functions are implemented.
- */
+   GET    /api/admin/programs
+   POST   /api/admin/programs
+   PUT    /api/admin/programs/:id
+   DELETE /api/admin/programs/:id
+*/
+
+router.get(
+  "/admin/programs",
+  auth,
+  getAllPrograms
+);
+
+router.post(
+  "/admin/programs",
+  auth,
+  createProgram
+);
 
 router.put(
   "/admin/programs/:id",
   auth,
   updateProgram
+);
+
+router.delete(
+  "/admin/programs/:id",
+  auth,
+  deleteProgram
+);
+
+/* ============================================================
+   ADMIN — OFFERS
+============================================================ */
+
+/*
+   GET    /api/admin/offers
+   POST   /api/admin/offers
+   PUT    /api/admin/offers/:id
+   DELETE /api/admin/offers/:id
+*/
+
+router.get(
+  "/admin/offers",
+  auth,
+  getAllOffers
+);
+
+router.post(
+  "/admin/offers",
+  auth,
+  createOffer
+);
+
+router.put(
+  "/admin/offers/:id",
+  auth,
+  updateOffer
+);
+
+router.delete(
+  "/admin/offers/:id",
+  auth,
+  deleteOffer
 );
 
 /* ============================================================
@@ -400,5 +502,9 @@ router.get(
   auth,
   getSubscribers
 );
+
+/* ============================================================
+   EXPORT
+============================================================ */
 
 module.exports = router;
