@@ -11,75 +11,8 @@ import {
 const heroImage = "/hero.jpg";
 
 // Real coach photos
-import coachAman from "../assets/trainers/coach-aman.jpeg";
-import coachHeaven from "../assets/trainers/coach-heaven.jpeg";
-import coachKabir from "../assets/trainers/coach-kabir.jpeg";
-import coachKunal from "../assets/trainers/coach-kunal.jpeg";
-import coachBali from "../assets/trainers/Coach Bali.jpeg";
-import coachSunny from "../assets/trainers/Coach Sunny.jpeg";
-import coachZahid from "../assets/trainers/Coach Zahid.jpeg";
-import coachVedant from "../assets/trainers/Coach Vedant.jpeg";
-
 // Local trainers remain visible even when API trainers exist.
 // API trainers are merged with these without duplicate names.
-const FALLBACK_TRAINERS = [
-  {
-    name: "Founder Vaibhav",
-    role: "Founder & Head Coach",
-    image: null,
-  },
-  {
-    name: "Coach Kunal",
-    role: "Calisthenics Coach",
-    image: coachKunal,
-  },
-  {
-    name: "Coach Bali",
-    role: "Calisthenics Coach",
-    image: coachBali,
-  },
-  {
-    name: "Coach Aman",
-    role: "Calisthenics Coach",
-    image: coachAman,
-  },
-  {
-    name: "Coach Aryan",
-    role: "Calisthenics Coach",
-    image: null,
-  },
-  {
-    name: "Coach Kabir",
-    role: "Calisthenics Coach",
-    image: coachKabir,
-  },
-  {
-    name: "Coach Vedant",
-    role: "Calisthenics Coach",
-    image: coachVedant,
-  },
-  {
-    name: "Coach Vedang",
-    role: "Calisthenics Coach",
-    image: null,
-  },
-  {
-    name: "Coach Heaven",
-    role: "Calisthenics Coach",
-    image: coachHeaven,
-  },
-  {
-    name: "Coach Sunny",
-    role: "Calisthenics Coach",
-    image: coachSunny,
-  },
-  {
-    name: "Coach Zahid",
-    role: "Calisthenics Coach",
-    image: coachZahid,
-  },
-];
-
 const typeColors = {
   announcement: "bg-accent/10 text-accent",
   workout: "bg-orange-500/20 text-orange-400",
