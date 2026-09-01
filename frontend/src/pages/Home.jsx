@@ -67,32 +67,9 @@ export default function Home() {
                 .toLowerCase()
             )
             .filter(Boolean)
-        );
-
-        const local = FALLBACK_TRAINERS
-          .filter(
-            (trainer) =>
-              !remoteNames.has(
-                String(trainer?.name || "")
-                  .trim()
-                  .toLowerCase()
-              )
-          )
-          .map((trainer, index) => ({
-            ...trainer,
-            id: `local-${index}`,
-          }));
-
-        setTrainers([...remote, ...local]);
+        );`r`n        setTrainers(remote);
       })
-      .catch(() => {
-        setTrainers(
-          FALLBACK_TRAINERS.map((trainer, index) => ({
-            ...trainer,
-            id: `local-${index}`,
-          }))
-        );
-      });
+      
   }, []);
 
   function formatDate(date) {
@@ -1064,3 +1041,6 @@ export default function Home() {
     </main>
   );
 }
+
+
+
