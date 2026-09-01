@@ -4,7 +4,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import WhatsAppButton from "./components/WhatsAppButton";
 import PageTransition from "./components/PageTransition";
-
+import Offers     from "./pages/Offers";
 import Home      from "./pages/Home";
 import About     from "./pages/About";
 import Programs  from "./pages/Programs";
@@ -31,6 +31,7 @@ function App() {
           <Route path="/"          element={<Home />} />
           <Route path="/about"     element={<About />} />
           <Route path="/programs"  element={<Programs />} />
+	  <Route path="/offers" element={<Offers />} />
           <Route path="/community" element={<Community />} />
           <Route path="/contact"   element={<Contact />} />
           <Route path="/gallery"   element={<Gallery />} />

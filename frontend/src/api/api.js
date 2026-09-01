@@ -497,3 +497,4 @@ export const adminGallery = () =>
 
 export const adminSubscribers = () =>
   apiGet("/admin/subscribers");
+export const getOffers = () => apiGet('/offers');

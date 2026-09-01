@@ -5,44 +5,8 @@ import {
   useState,
 } from "react";
 
-import {
-  adminLogin,
-  adminMe,
-  adminChangePassword,
-  adminDashboard,
-
-  adminBookings,
-  adminUpdateBooking,
-  adminDeleteBooking,
-
-  adminContacts,
-  adminMarkContactRead,
-  adminDeleteContact,
-
-  adminReviews,
-  adminApproveReview,
-  adminRejectReview,
-  adminFeatureReview,
-  adminDeleteReview,
-
-  adminPosts,
-  adminDeletePost,
-  adminTogglePost,
-
-  adminPrograms,
-  adminCreateProgram,
-  adminUpdateProgram,
-  adminDeleteProgram,
-
-  adminOffers,
-  adminCreateOffer,
-  adminUpdateOffer,
-  adminDeleteOffer,
-
-  adminTrainers,
-  adminGallery,
-  getPrograms,
-} from "../api/api.js";
+import { apiFetch } from "../api/api.js";
+import ThemeToggle from "../components/ThemeToggle";
 
 /* ============================================================
    AUTH STORAGE
@@ -89,9 +53,7 @@ function clearAuth() {
 ============================================================ */
 
 function safeArray(value) {
-  if (Array.isArray(value)) {
-    return value;
-  }
+  if (Array.isArray(value)) return value;
 
   if (typeof value === "string") {
     try {
@@ -105,6 +67,23 @@ function safeArray(value) {
   }
 
   return [];
+}
+
+function normalizeBoolean(value) {
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    value === "true"
+  );
+}
+
+function formatNumber(value) {
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number.toLocaleString("en-IN")
+    : "0";
 }
 
 function formatDate(value) {
@@ -125,41 +104,70 @@ function formatDate(value) {
   });
 }
 
-function formatNumber(value) {
-  const number = Number(value);
+function formatDateOnly(value) {
+  if (!value) return "";
 
-  return Number.isFinite(number)
-    ? number.toLocaleString("en-IN")
-    : "0";
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value).slice(0, 10);
+  }
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
-function normalizeBoolean(value) {
-  return (
-    value === true ||
-    value === 1 ||
-    value === "1" ||
-    value === "true"
-  );
+function formatOfferDiscount(offer) {
+  const type = String(
+    offer?.discount_type || "text"
+  ).toLowerCase();
+
+  const value = offer?.discount_value;
+
+  if (
+    type === "percentage" &&
+    value !== null &&
+    value !== undefined &&
+    value !== ""
+  ) {
+    return `${Number(value)}% OFF`;
+  }
+
+  if (
+    type === "fixed" &&
+    value !== null &&
+    value !== undefined &&
+    value !== ""
+  ) {
+    return `₹${Number(
+      value
+    ).toLocaleString("en-IN")} OFF`;
+  }
+
+  return "CUSTOM OFFER";
 }
 
 /* ============================================================
-   STYLES
+   THEME-FRIENDLY STYLES
 ============================================================ */
 
 const inputClass =
-  "w-full rounded-xl border border-gray-700 bg-[#0B0F19] px-4 py-3 text-white placeholder:text-gray-600 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10";
+  "w-full rounded-xl border border-border bg-bg text-text px-4 py-3 placeholder:text-text-muted/60 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10";
 
 const textareaClass =
-  "w-full min-h-32 rounded-xl border border-gray-700 bg-[#0B0F19] px-4 py-3 text-white placeholder:text-gray-600 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 resize-y";
+  "w-full min-h-32 rounded-xl border border-border bg-bg text-text px-4 py-3 placeholder:text-text-muted/60 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 resize-y";
 
 const buttonPrimary =
   "rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-3 font-bold transition";
 
 const buttonSecondary =
-  "rounded-xl border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white px-5 py-3 font-semibold transition";
+  "rounded-xl border border-border bg-surface hover:bg-bg text-text-muted hover:text-text px-5 py-3 font-semibold transition";
 
 const buttonDanger =
-  "rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-300 px-4 py-2 font-semibold transition";
+  "rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 font-semibold transition";
 
 /* ============================================================
    FIELD
@@ -172,11 +180,11 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="block text-sm text-gray-300 font-medium mb-2">
+      <span className="block text-sm text-text-muted font-medium mb-2">
         {label}
 
         {required && (
-          <span className="text-orange-400 ml-1">
+          <span className="text-orange-500 ml-1">
             *
           </span>
         )}
@@ -198,56 +206,56 @@ function StatusBadge({ value }) {
 
   const classes = {
     pending:
-      "bg-yellow-500/10 text-yellow-300 border-yellow-500/20",
+      "bg-yellow-500/10 text-yellow-600 dark:text-yellow-300 border-yellow-500/20",
 
     confirmed:
-      "bg-green-500/10 text-green-300 border-green-500/20",
+      "bg-green-500/10 text-green-600 dark:text-green-300 border-green-500/20",
 
     completed:
-      "bg-blue-500/10 text-blue-300 border-blue-500/20",
+      "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20",
 
     cancelled:
-      "bg-red-500/10 text-red-300 border-red-500/20",
+      "bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20",
 
     approved:
-      "bg-green-500/10 text-green-300 border-green-500/20",
+      "bg-green-500/10 text-green-600 dark:text-green-300 border-green-500/20",
 
     rejected:
-      "bg-red-500/10 text-red-300 border-red-500/20",
+      "bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20",
 
     published:
-      "bg-green-500/10 text-green-300 border-green-500/20",
+      "bg-green-500/10 text-green-600 dark:text-green-300 border-green-500/20",
 
     unpublished:
-      "bg-gray-500/10 text-gray-300 border-gray-500/20",
+      "bg-gray-500/10 text-gray-600 dark:text-gray-300 border-gray-500/20",
 
     active:
-      "bg-green-500/10 text-green-300 border-green-500/20",
+      "bg-green-500/10 text-green-600 dark:text-green-300 border-green-500/20",
 
     inactive:
-      "bg-gray-500/10 text-gray-300 border-gray-500/20",
+      "bg-gray-500/10 text-gray-600 dark:text-gray-300 border-gray-500/20",
 
     featured:
-      "bg-orange-500/10 text-orange-300 border-orange-500/20",
+      "bg-orange-500/10 text-orange-600 dark:text-orange-300 border-orange-500/20",
 
     read:
-      "bg-gray-500/10 text-gray-300 border-gray-500/20",
+      "bg-gray-500/10 text-gray-600 dark:text-gray-300 border-gray-500/20",
 
     unread:
-      "bg-orange-500/10 text-orange-300 border-orange-500/20",
+      "bg-orange-500/10 text-orange-600 dark:text-orange-300 border-orange-500/20",
 
     manual:
-      "bg-blue-500/10 text-blue-300 border-blue-500/20",
+      "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20",
 
     google:
-      "bg-green-500/10 text-green-300 border-green-500/20",
+      "bg-green-500/10 text-green-600 dark:text-green-300 border-green-500/20",
   };
 
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
         classes[status] ||
-        "bg-gray-500/10 text-gray-300 border-gray-500/20"
+        "bg-gray-500/10 text-text-muted border-border"
       }`}
     >
       {value || "pending"}
@@ -448,6 +456,12 @@ export default function Admin() {
   const [selectedGalleryFolder, setSelectedGalleryFolder] =
     useState("");
 
+  const [openGalleryFolder, setOpenGalleryFolder] =
+    useState(null);
+
+  const [newFolderName, setNewFolderName] =
+    useState("");
+
   /* ==========================================================
      PASSWORD
   ========================================================== */
@@ -460,7 +474,7 @@ export default function Admin() {
     });
 
   /* ==========================================================
-     GOOGLE
+     GOOGLE LOGIN
   ========================================================== */
 
   const GOOGLE_CLIENT_ID =
@@ -508,7 +522,7 @@ export default function Admin() {
   }, []);
 
   /* ==========================================================
-     EMAIL LOGIN
+     EMAIL/PASSWORD LOGIN
   ========================================================== */
 
   async function handleLogin(event) {
@@ -525,10 +539,16 @@ export default function Admin() {
       setLoginLoading(true);
       setLoginError("");
 
-      const data = await adminLogin({
-        email: email.trim(),
-        password,
-      });
+      const data = await apiFetch(
+        "/auth/login",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+          }),
+        }
+      );
 
       if (
         !data?.success ||
@@ -567,85 +587,74 @@ export default function Admin() {
      GOOGLE LOGIN
   ========================================================== */
 
-  const handleGoogleLogin = useCallback(
-    async (response) => {
-      if (!response?.credential) {
-        showError(
-          "Google did not provide a valid credential."
-        );
-        return;
-      }
-
-      try {
-        setLoginLoading(true);
-        clearMessages();
-
-        const responseData =
-          await fetch(
-            `${(
-              import.meta.env
-                .VITE_API_URL ||
-              "http://127.0.0.1:5000/api"
-            ).replace(/\/+$/, "")}/auth/google`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type":
-                  "application/json",
-              },
-              body: JSON.stringify({
-                credential:
-                  response.credential,
-              }),
-            }
+  const handleGoogleLogin =
+    useCallback(
+      async (googleResponse) => {
+        if (!googleResponse?.credential) {
+          showError(
+            "Google did not provide a valid credential."
           );
-
-        const data =
-          await responseData.json();
-
-        if (
-          !responseData.ok ||
-          !data?.success ||
-          !data?.token
-        ) {
-          throw new Error(
-            data?.message ||
-              data?.error ||
-              "Google sign-in failed."
-          );
+          return;
         }
 
-        saveAuth(data);
+        try {
+          setLoginLoading(true);
+          clearMessages();
 
-        setToken(data.token);
-        setAdmin(data.admin || null);
+          const data =
+            await apiFetch(
+              "/auth/google",
+              {
+                method: "POST",
+                body: JSON.stringify({
+                  credential:
+                    googleResponse.credential,
+                }),
+              }
+            );
 
-        showSuccess(
-          "Google sign-in successful."
-        );
-      } catch (error) {
-        console.error(
-          "Google login error:",
-          error
-        );
+          if (
+            !data?.success ||
+            !data?.token
+          ) {
+            throw new Error(
+              data?.message ||
+                data?.error ||
+                "Google sign-in failed."
+            );
+          }
 
-        showError(
-          error?.message ||
-            "Google sign-in failed."
-        );
-      } finally {
-        setLoginLoading(false);
-      }
-    },
-    []
-  );
+          saveAuth(data);
+
+          setToken(data.token);
+          setAdmin(
+            data.admin || null
+          );
+
+          showSuccess(
+            "Google sign-in successful."
+          );
+        } catch (error) {
+          console.error(
+            "Google login error:",
+            error
+          );
+
+          showError(
+            error?.message ||
+              "Google sign-in failed."
+          );
+        } finally {
+          setLoginLoading(false);
+        }
+      },
+      []
+    );
 
   useEffect(() => {
     if (token) return;
 
-    if (!GOOGLE_CLIENT_ID) {
-      return;
-    }
+    if (!GOOGLE_CLIENT_ID) return;
 
     if (googleInitializedRef.current) {
       return;
@@ -663,9 +672,7 @@ export default function Admin() {
           "google-signin-btn"
         );
 
-      if (!container) {
-        return;
-      }
+      if (!container) return;
 
       if (googleInitializedRef.current) {
         return;
@@ -688,7 +695,7 @@ export default function Admin() {
       window.google.accounts.id.renderButton(
         container,
         {
-          theme: "filled_black",
+          theme: "outline",
           size: "large",
           text: "signin_with",
           shape: "rectangular",
@@ -722,7 +729,9 @@ export default function Admin() {
     }
 
     const script =
-      document.createElement("script");
+      document.createElement(
+        "script"
+      );
 
     script.id =
       "mci-google-script";
@@ -798,31 +807,29 @@ export default function Admin() {
   }
 
   /* ==========================================================
-     LOAD DASHBOARD
+     LOADERS
   ========================================================== */
 
-  const loadDashboard = useCallback(
-    async () => {
+  const loadDashboard =
+    useCallback(async () => {
       const data =
-        await adminDashboard();
+        await apiFetch(
+          "/admin/dashboard"
+        );
 
       if (data?.success) {
         setDashboard(data);
       }
 
       return data;
-    },
-    []
-  );
-
-  /* ==========================================================
-     LOAD PROGRAMS
-  ========================================================== */
+    }, []);
 
   const loadPrograms =
     useCallback(async () => {
       const data =
-        await adminPrograms();
+        await apiFetch(
+          "/admin/programs"
+        );
 
       if (data?.success) {
         setPrograms(
@@ -833,14 +840,12 @@ export default function Admin() {
       return data;
     }, []);
 
-  /* ==========================================================
-     LOAD OFFERS
-  ========================================================== */
-
   const loadOffers =
     useCallback(async () => {
       const data =
-        await adminOffers();
+        await apiFetch(
+          "/admin/offers"
+        );
 
       if (data?.success) {
         setOffers(
@@ -851,29 +856,46 @@ export default function Admin() {
       return data;
     }, []);
 
-  /* ==========================================================
-     LOAD BOOKINGS
-  ========================================================== */
-
   const loadBookings =
     useCallback(async () => {
-      const params = {};
+      const params =
+        new URLSearchParams();
 
       if (bookingSearch.trim()) {
-        params.search =
-          bookingSearch.trim();
+        params.set(
+          "search",
+          bookingSearch.trim()
+        );
       }
 
       if (bookingStatus) {
-        params.status =
-          bookingStatus;
+        params.set(
+          "status",
+          bookingStatus
+        );
       }
 
-      params.page = bookingPage;
-      params.limit = 20;
+      params.set(
+        "page",
+        String(bookingPage)
+      );
+
+      params.set(
+        "limit",
+        "20"
+      );
+
+      const query =
+        params.toString();
 
       const data =
-        await adminBookings(params);
+        await apiFetch(
+          `/admin/bookings${
+            query
+              ? `?${query}`
+              : ""
+          }`
+        );
 
       if (data?.success) {
         setBookings(
@@ -881,7 +903,9 @@ export default function Admin() {
         );
 
         setBookingTotal(
-          Number(data.total || 0)
+          Number(
+            data.total || 0
+          )
         );
 
         setBookingTotalPages(
@@ -898,39 +922,55 @@ export default function Admin() {
       bookingPage,
     ]);
 
-  /* ==========================================================
-     LOAD CONTACTS
-  ========================================================== */
-
   const loadContacts =
     useCallback(async () => {
-      const params = {};
+      const params =
+        new URLSearchParams();
 
       if (contactSearch.trim()) {
-        params.search =
-          contactSearch.trim();
+        params.set(
+          "search",
+          contactSearch.trim()
+        );
       }
 
       if (
-        contactFilter === "read"
+        contactFilter ===
+        "read"
       ) {
-        params.read = 1;
+        params.set(
+          "read",
+          "1"
+        );
       }
 
       if (
-        contactFilter === "unread"
+        contactFilter ===
+        "unread"
       ) {
-        params.read = 0;
+        params.set(
+          "read",
+          "0"
+        );
       }
+
+      const query =
+        params.toString();
 
       const data =
-        await adminContacts(
-          params
+        await apiFetch(
+          `/admin/contacts${
+            query
+              ? `?${query}`
+              : ""
+          }`
         );
 
       if (data?.success) {
         setContacts(
-          safeArray(data.contacts)
+          safeArray(
+            data.contacts
+          )
         );
       }
 
@@ -940,68 +980,66 @@ export default function Admin() {
       contactFilter,
     ]);
 
-  /* ==========================================================
-     LOAD REVIEWS
-  ========================================================== */
-
   const loadReviews =
     useCallback(async () => {
       const data =
-        await adminReviews();
+        await apiFetch(
+          "/admin/reviews"
+        );
 
       if (data?.success) {
         setReviews(
-          safeArray(data.reviews)
+          safeArray(
+            data.reviews
+          )
         );
       }
 
       return data;
     }, []);
-
-  /* ==========================================================
-     LOAD POSTS
-  ========================================================== */
 
   const loadPosts =
     useCallback(async () => {
       const data =
-        await adminPosts();
+        await apiFetch(
+          "/admin/posts"
+        );
 
       if (data?.success) {
         setPosts(
-          safeArray(data.posts)
+          safeArray(
+            data.posts
+          )
         );
       }
 
       return data;
     }, []);
-
-  /* ==========================================================
-     LOAD TRAINERS
-  ========================================================== */
 
   const loadTrainers =
     useCallback(async () => {
       const data =
-        await adminTrainers();
+        await apiFetch(
+          "/admin/trainers"
+        );
 
       if (data?.success) {
         setTrainers(
-          safeArray(data.trainers)
+          safeArray(
+            data.trainers
+          )
         );
       }
 
       return data;
     }, []);
 
-  /* ==========================================================
-     LOAD GALLERY
-  ========================================================== */
-
   const loadGallery =
     useCallback(async () => {
       const data =
-        await adminGallery();
+        await apiFetch(
+          "/admin/gallery"
+        );
 
       if (data?.success) {
         setGallery(
@@ -1117,7 +1155,7 @@ export default function Admin() {
   ]);
 
   /* ==========================================================
-     BOOKINGS
+     BOOKINGS ACTIONS
   ========================================================== */
 
   async function updateBookingStatus(
@@ -1127,22 +1165,28 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminUpdateBooking(
-            id,
-            { status }
+          apiFetch(
+            `/admin/bookings/${id}`,
+            {
+              method: "PATCH",
+              body: JSON.stringify({
+                status,
+              }),
+            }
           ),
         "Booking status updated."
       );
 
     if (result?.success) {
       setBookings((current) =>
-        current.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                status,
-              }
-            : item
+        current.map(
+          (item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  status,
+                }
+              : item
         )
       );
     }
@@ -1162,7 +1206,12 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminDeleteBooking(id),
+          apiFetch(
+            `/admin/bookings/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
         "Booking deleted."
       );
 
@@ -1177,7 +1226,7 @@ export default function Admin() {
   }
 
   /* ==========================================================
-     CONTACTS
+     CONTACT ACTIONS
   ========================================================== */
 
   async function markContactRead(
@@ -1186,19 +1235,25 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminMarkContactRead(id),
+          apiFetch(
+            `/admin/contacts/${id}/read`,
+            {
+              method: "PATCH",
+            }
+          ),
         "Message marked as read."
       );
 
     if (result?.success) {
       setContacts((current) =>
-        current.map((contact) =>
-          contact.id === id
-            ? {
-                ...contact,
-                is_read: 1,
-              }
-            : contact
+        current.map(
+          (item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  is_read: 1,
+                }
+              : item
         )
       );
     }
@@ -1209,7 +1264,7 @@ export default function Admin() {
   ) {
     if (
       !window.confirm(
-        "Delete this contact message?"
+        "Delete this message permanently?"
       )
     ) {
       return;
@@ -1218,7 +1273,12 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminDeleteContact(id),
+          apiFetch(
+            `/admin/contacts/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
         "Contact message deleted."
       );
 
@@ -1233,7 +1293,7 @@ export default function Admin() {
   }
 
   /* ==========================================================
-     REVIEWS
+     REVIEW ACTIONS
   ========================================================== */
 
   async function approveReview(
@@ -1242,21 +1302,27 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminApproveReview(id),
+          apiFetch(
+            `/admin/reviews/${id}/approve`,
+            {
+              method: "PATCH",
+            }
+          ),
         "Review approved."
       );
 
     if (result?.success) {
       setReviews((current) =>
-        current.map((review) =>
-          review.id === id
-            ? {
-                ...review,
-                approved: 1,
-                status:
-                  "approved",
-              }
-            : review
+        current.map(
+          (review) =>
+            review.id === id
+              ? {
+                  ...review,
+                  approved: 1,
+                  status:
+                    "approved",
+                }
+              : review
         )
       );
     }
@@ -1268,22 +1334,28 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminRejectReview(id),
+          apiFetch(
+            `/admin/reviews/${id}/reject`,
+            {
+              method: "PATCH",
+            }
+          ),
         "Review rejected."
       );
 
     if (result?.success) {
       setReviews((current) =>
-        current.map((review) =>
-          review.id === id
-            ? {
-                ...review,
-                approved: 0,
-                featured: 0,
-                status:
-                  "rejected",
-              }
-            : review
+        current.map(
+          (review) =>
+            review.id === id
+              ? {
+                  ...review,
+                  approved: 0,
+                  featured: 0,
+                  status:
+                    "rejected",
+                }
+              : review
         )
       );
     }
@@ -1295,20 +1367,26 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminFeatureReview(id),
-        "Review featured status updated."
+          apiFetch(
+            `/admin/reviews/${id}/feature`,
+            {
+              method: "PATCH",
+            }
+          ),
+        "Featured status updated."
       );
 
     if (result?.success) {
       setReviews((current) =>
-        current.map((review) =>
-          review.id === id
-            ? {
-                ...review,
-                featured:
-                  result.featured,
-              }
-            : review
+        current.map(
+          (review) =>
+            review.id === id
+              ? {
+                  ...review,
+                  featured:
+                    result.featured,
+                }
+              : review
         )
       );
     }
@@ -1328,7 +1406,12 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminDeleteReview(id),
+          apiFetch(
+            `/admin/reviews/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
         "Review deleted."
       );
 
@@ -1398,22 +1481,22 @@ export default function Admin() {
             );
           }
 
-          if (postForm.imageFile) {
+          if (
+            postForm.imageFile
+          ) {
             formData.append(
               "image",
               postForm.imageFile
             );
           }
 
-          return adminPosts.__create
-            ? adminPosts.__create(formData)
-            : (
-                await import(
-                  "../api/api.js"
-                )
-              ).adminCreatePost(
-                formData
-              );
+          return apiFetch(
+            "/admin/posts",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
         },
         "Post created successfully."
       );
@@ -1434,6 +1517,39 @@ export default function Admin() {
     }
   }
 
+  async function togglePost(
+    id
+  ) {
+    const result =
+      await runRequest(
+        () =>
+          apiFetch(
+            `/admin/posts/${id}/toggle`,
+            {
+              method: "PATCH",
+            }
+          ),
+        "Post visibility updated."
+      );
+
+    if (result?.success) {
+      setPosts((current) =>
+        current.map(
+          (post) =>
+            post.id === id
+              ? {
+                  ...post,
+                  published:
+                    !normalizeBoolean(
+                      post.published
+                    ),
+                }
+              : post
+        )
+      );
+    }
+  }
+
   async function deletePost(
     id
   ) {
@@ -1448,7 +1564,12 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminDeletePost(id),
+          apiFetch(
+            `/admin/posts/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
         "Post deleted."
       );
 
@@ -1457,33 +1578,6 @@ export default function Admin() {
         current.filter(
           (post) =>
             post.id !== id
-        )
-      );
-    }
-  }
-
-  async function togglePost(
-    id
-  ) {
-    const result =
-      await runRequest(
-        () =>
-          adminTogglePost(id),
-        "Post visibility updated."
-      );
-
-    if (result?.success) {
-      setPosts((current) =>
-        current.map((post) =>
-          post.id === id
-            ? {
-                ...post,
-                published:
-                  !normalizeBoolean(
-                    post.published
-                  ),
-              }
-            : post
         )
       );
     }
@@ -1529,20 +1623,21 @@ export default function Admin() {
             trainerForm.bio.trim()
           );
 
-          if (trainerForm.imageFile) {
+          if (
+            trainerForm.imageFile
+          ) {
             formData.append(
               "image",
               trainerForm.imageFile
             );
           }
 
-          const api =
-            await import(
-              "../api/api.js"
-            );
-
-          return api.adminCreateTrainer(
-            formData
+          return apiFetch(
+            "/admin/trainers",
+            {
+              method: "POST",
+              body: formData,
+            }
           );
         },
         "Trainer created successfully."
@@ -1572,15 +1667,15 @@ export default function Admin() {
       return;
     }
 
-    const api =
-      await import(
-        "../api/api.js"
-      );
-
     const result =
       await runRequest(
         () =>
-          api.adminDeleteTrainer(id),
+          apiFetch(
+            `/admin/trainers/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
         "Trainer deleted."
       );
 
@@ -1644,13 +1739,15 @@ export default function Admin() {
 
       pricing:
         pricing
-          .map((pair) =>
-            Array.isArray(pair)
-              ? `${pair[0] || ""} | ${
-                  pair[1] || ""
-                }`
-              : ""
-          )
+          .map((pair) => {
+            if (!Array.isArray(pair)) {
+              return "";
+            }
+
+            return `${pair[0] || ""} | ${
+              pair[1] || ""
+            }`;
+          })
           .filter(Boolean)
           .join("\n"),
 
@@ -1669,7 +1766,8 @@ export default function Admin() {
 
       sort_order:
         Number(
-          program.sort_order || 0
+          program.sort_order ||
+            0
         ),
     });
   }
@@ -1704,10 +1802,13 @@ export default function Admin() {
             line.split("|");
 
           return [
-            (parts[0] || "").trim(),
-            (parts
-              .slice(1)
-              .join("|") || ""
+            (parts[0] || "")
+              .trim(),
+
+            (
+              parts
+                .slice(1)
+                .join("|") || ""
             ).trim(),
           ];
         })
@@ -1746,7 +1847,8 @@ export default function Admin() {
 
       sort_order:
         Number(
-          programForm.sort_order || 0
+          programForm.sort_order ||
+            0
         ),
     };
 
@@ -1754,12 +1856,23 @@ export default function Admin() {
       await runRequest(
         () =>
           editingProgramId
-            ? adminUpdateProgram(
-                editingProgramId,
-                payload
+            ? apiFetch(
+                `/admin/programs/${editingProgramId}`,
+                {
+                  method: "PUT",
+                  body: JSON.stringify(
+                    payload
+                  ),
+                }
               )
-            : adminCreateProgram(
-                payload
+            : apiFetch(
+                "/admin/programs",
+                {
+                  method: "POST",
+                  body: JSON.stringify(
+                    payload
+                  ),
+                }
               ),
         editingProgramId
           ? "Program updated successfully."
@@ -1786,7 +1899,12 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminDeleteProgram(id),
+          apiFetch(
+            `/admin/programs/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
         "Program deleted successfully."
       );
 
@@ -1873,7 +1991,8 @@ export default function Admin() {
 
       sort_order:
         Number(
-          offer.sort_order || 0
+          offer.sort_order ||
+            0
         ),
     });
   }
@@ -1904,6 +2023,21 @@ export default function Admin() {
       return;
     }
 
+    if (
+      offerForm.discount_type !==
+        "text" &&
+      offerForm.discount_value !==
+        "" &&
+      Number(
+        offerForm.discount_value
+      ) < 0
+    ) {
+      showError(
+        "Discount value cannot be negative."
+      );
+      return;
+    }
+
     const payload = {
       title:
         offerForm.title.trim(),
@@ -1915,10 +2049,10 @@ export default function Admin() {
         offerForm.discount_type,
 
       discount_value:
+        offerForm.discount_type ===
+          "text" ||
         offerForm.discount_value ===
-          "" ||
-        offerForm.discount_value ===
-          null
+          ""
           ? null
           : Number(
               offerForm.discount_value
@@ -1956,12 +2090,23 @@ export default function Admin() {
       await runRequest(
         () =>
           editingOfferId
-            ? adminUpdateOffer(
-                editingOfferId,
-                payload
+            ? apiFetch(
+                `/admin/offers/${editingOfferId}`,
+                {
+                  method: "PUT",
+                  body: JSON.stringify(
+                    payload
+                  ),
+                }
               )
-            : adminCreateOffer(
-                payload
+            : apiFetch(
+                "/admin/offers",
+                {
+                  method: "POST",
+                  body: JSON.stringify(
+                    payload
+                  ),
+                }
               ),
         editingOfferId
           ? "Offer updated successfully."
@@ -1988,7 +2133,12 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminDeleteOffer(id),
+          apiFetch(
+            `/admin/offers/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
         "Offer deleted successfully."
       );
 
@@ -2012,6 +2162,82 @@ export default function Admin() {
      GALLERY
   ========================================================== */
 
+  async function createGalleryFolder(
+    event
+  ) {
+    event.preventDefault();
+
+    if (!newFolderName.trim()) {
+      showError(
+        "Enter a folder name."
+      );
+      return;
+    }
+
+    const result =
+      await runRequest(
+        () =>
+          apiFetch(
+            "/admin/gallery/folders",
+            {
+              method: "POST",
+              body: JSON.stringify({
+                name:
+                  newFolderName.trim(),
+              }),
+            }
+          ),
+        "Gallery folder created."
+      );
+
+    if (result?.success) {
+      setNewFolderName("");
+      await loadGallery();
+    }
+  }
+
+  async function deleteGalleryFolder(
+    id
+  ) {
+    if (
+      !window.confirm(
+        "Delete this folder and its photos permanently?"
+      )
+    ) {
+      return;
+    }
+
+    const result =
+      await runRequest(
+        () =>
+          apiFetch(
+            `/admin/gallery/folders/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
+        "Gallery folder deleted."
+      );
+
+    if (result?.success) {
+      setGallery((current) =>
+        current.filter(
+          (folder) =>
+            folder.id !== id
+        )
+      );
+
+      if (
+        openGalleryFolder ===
+        id
+      ) {
+        setOpenGalleryFolder(
+          null
+        );
+      }
+    }
+  }
+
   async function uploadGalleryImage(
     event
   ) {
@@ -2023,11 +2249,6 @@ export default function Admin() {
       );
       return;
     }
-
-    const api =
-      await import(
-        "../api/api.js"
-      );
 
     const result =
       await runRequest(
@@ -2049,8 +2270,12 @@ export default function Admin() {
             );
           }
 
-          return api.adminUploadGalleryPhoto(
-            formData
+          return apiFetch(
+            "/admin/gallery/photos",
+            {
+              method: "POST",
+              body: formData,
+            }
           );
         },
         "Gallery image uploaded."
@@ -2058,6 +2283,45 @@ export default function Admin() {
 
     if (result?.success) {
       setGalleryFile(null);
+
+      await loadGallery();
+
+      if (
+        selectedGalleryFolder
+      ) {
+        setOpenGalleryFolder(
+          Number(
+            selectedGalleryFolder
+          )
+        );
+      }
+    }
+  }
+
+  async function deleteGalleryPhoto(
+    id
+  ) {
+    if (
+      !window.confirm(
+        "Delete this gallery image permanently?"
+      )
+    ) {
+      return;
+    }
+
+    const result =
+      await runRequest(
+        () =>
+          apiFetch(
+            `/admin/gallery/photos/${id}`,
+            {
+              method: "DELETE",
+            }
+          ),
+        "Gallery image deleted."
+      );
+
+    if (result?.success) {
       await loadGallery();
     }
   }
@@ -2095,13 +2359,17 @@ export default function Admin() {
     const result =
       await runRequest(
         () =>
-          adminChangePassword(
+          apiFetch(
+            "/auth/change-password",
             {
-              currentPassword:
-                passwordForm.current,
+              method: "POST",
+              body: JSON.stringify({
+                currentPassword:
+                  passwordForm.current,
 
-              newPassword:
-                passwordForm.newPassword,
+                newPassword:
+                  passwordForm.newPassword,
+              }),
             }
           ),
         "Password changed successfully."
@@ -2126,46 +2394,55 @@ export default function Admin() {
       label: "Dashboard",
       icon: "⌂",
     },
+
     {
       id: "bookings",
       label: "Trial Requests",
       icon: "▣",
     },
+
     {
       id: "contacts",
       label: "Contact Queries",
       icon: "✉",
     },
+
     {
       id: "programs",
       label: "Programs",
       icon: "◈",
     },
+
     {
       id: "offers",
       label: "Offers",
       icon: "🔥",
     },
+
     {
       id: "trainers",
       label: "Trainers",
       icon: "♙",
     },
+
     {
       id: "posts",
       label: "Community Posts",
       icon: "◉",
     },
+
     {
       id: "reviews",
       label: "Reviews",
       icon: "★",
     },
+
     {
       id: "gallery",
       label: "Gallery",
       icon: "▧",
     },
+
     {
       id: "settings",
       label: "Settings",
@@ -2174,14 +2451,21 @@ export default function Admin() {
   ];
 
   /* ==========================================================
-     LOGIN SCREEN
+     LOGIN
   ========================================================== */
 
   if (!token) {
     return (
-      <main className="min-h-screen bg-[#070A10] text-white flex items-center justify-center px-5 py-10">
+      <main className="min-h-screen bg-bg text-text flex items-center justify-center px-5 py-10 transition-colors duration-300">
+
+        <div className="absolute top-5 right-5">
+          <ThemeToggle aria-label="Toggle light and dark theme" />
+        </div>
+
         <div className="w-full max-w-md">
+
           <div className="text-center mb-8">
+
             <p className="text-orange-500 text-xs font-black uppercase tracking-[0.35em]">
               Master Calisthenics India
             </p>
@@ -2190,16 +2474,19 @@ export default function Admin() {
               Admin Portal
             </h1>
 
-            <p className="text-gray-500 mt-3">
+            <p className="text-text-muted mt-3">
               Secure management dashboard
             </p>
+
           </div>
 
-          <div className="rounded-3xl border border-gray-800 bg-[#0F172A] p-7 shadow-2xl">
+          <div className="rounded-3xl border border-border bg-surface p-7 shadow-2xl">
+
             <form
               onSubmit={handleLogin}
               className="space-y-5"
             >
+
               <Field
                 label="Admin Email"
                 required
@@ -2214,7 +2501,9 @@ export default function Admin() {
                     )
                   }
                   placeholder="admin@example.com"
-                  className={inputClass}
+                  className={
+                    inputClass
+                  }
                 />
               </Field>
 
@@ -2232,12 +2521,14 @@ export default function Admin() {
                     )
                   }
                   placeholder="Enter your password"
-                  className={inputClass}
+                  className={
+                    inputClass
+                  }
                 />
               </Field>
 
               {loginError && (
-                <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+                <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">
                   {loginError}
                 </div>
               )}
@@ -2254,14 +2545,15 @@ export default function Admin() {
                   ? "Signing in..."
                   : "Sign In"}
               </button>
+
             </form>
 
             {GOOGLE_CLIENT_ID && (
               <>
                 <div className="relative my-7">
-                  <div className="border-t border-gray-800" />
+                  <div className="border-t border-border" />
 
-                  <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-[#0F172A] px-3 text-xs text-gray-600">
+                  <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-surface px-3 text-xs text-text-muted">
                     OR
                   </span>
                 </div>
@@ -2273,58 +2565,60 @@ export default function Admin() {
               </>
             )}
 
-            <p className="text-center text-xs text-gray-600 mt-5 leading-relaxed">
+            <p className="text-center text-xs text-text-muted mt-5 leading-relaxed">
               Only authorized administrator
               accounts should use this portal.
             </p>
+
           </div>
+
         </div>
       </main>
     );
   }
 
   /* ==========================================================
-     DASHBOARD NUMBERS
+     DASHBOARD DATA
   ========================================================== */
 
   const stats =
     dashboard?.stats || {};
 
-  const dashboardBookings =
+  const totalBookings =
     Number(
       stats.total_bookings ||
         dashboard?.bookings ||
         0
     );
 
-  const dashboardPrograms =
+  const totalPrograms =
     Number(
       stats.total_programs ??
         programs.length
     );
 
-  const dashboardTrainers =
+  const totalOffers =
+    Number(
+      stats.total_offers ??
+        offers.length
+    );
+
+  const totalTrainers =
     Number(
       stats.total_trainers ??
         trainers.length
     );
 
-  const dashboardPosts =
+  const totalPosts =
     Number(
       stats.total_posts ??
         posts.length
     );
 
-  const dashboardReviews =
+  const totalReviews =
     Number(
       stats.total_reviews ??
         reviews.length
-    );
-
-  const dashboardOffers =
-    Number(
-      stats.total_offers ??
-        offers.length
     );
 
   const pendingReviews =
@@ -2338,39 +2632,49 @@ export default function Admin() {
     );
 
   /* ==========================================================
-     MAIN UI
+     MAIN
   ========================================================== */
 
   return (
-    <div className="min-h-screen bg-[#080C14] text-white">
-      {/* SUCCESS */}
+    <div className="min-h-screen bg-bg text-text transition-colors duration-300">
+
+      {/* ======================================================
+          ALERTS
+      ====================================================== */}
+
       {successMessage && (
-        <div className="fixed top-5 right-5 z-[300] max-w-sm rounded-xl border border-green-500/20 bg-green-500/10 px-5 py-4 text-sm text-green-300 shadow-2xl">
+        <div className="fixed top-5 right-5 z-[300] max-w-sm rounded-xl border border-green-500/20 bg-green-500/10 px-5 py-4 text-sm text-green-600 dark:text-green-300 shadow-2xl">
           {successMessage}
         </div>
       )}
 
-      {/* ERROR */}
       {errorMessage && (
-        <div className="fixed top-5 right-5 z-[300] max-w-sm rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-300 shadow-2xl">
+        <div className="fixed top-5 right-5 z-[300] max-w-sm rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-600 dark:text-red-300 shadow-2xl">
           {errorMessage}
         </div>
       )}
 
-      {/* MOBILE HEADER */}
-      <header className="lg:hidden sticky top-0 z-50 border-b border-gray-800 bg-[#080C14]/95 backdrop-blur px-4 py-4 flex items-center justify-between">
+      {/* ======================================================
+          MOBILE HEADER
+      ====================================================== */}
+
+      <header className="lg:hidden sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur px-4 py-4 flex items-center justify-between">
+
         <button
           type="button"
           onClick={() =>
-            setMobileMenuOpen(true)
+            setMobileMenuOpen(
+              true
+            )
           }
-          className="w-10 h-10 rounded-xl border border-gray-700 flex items-center justify-center"
+          className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-bg transition"
           aria-label="Open admin menu"
         >
           ☰
         </button>
 
         <div className="text-center">
+
           <p className="text-orange-500 text-[10px] font-black tracking-[0.3em]">
             MCI
           </p>
@@ -2378,39 +2682,60 @@ export default function Admin() {
           <p className="text-sm font-black">
             ADMIN
           </p>
+
         </div>
 
-        <button
-          type="button"
-          onClick={logout}
-          className="text-xs text-gray-400"
-        >
-          Logout
-        </button>
+        <div className="flex items-center gap-2">
+
+          <ThemeToggle aria-label="Toggle light and dark theme" />
+
+          <button
+            type="button"
+            onClick={logout}
+            className="text-xs text-text-muted hover:text-text transition"
+          >
+            Logout
+          </button>
+
+        </div>
+
       </header>
 
-      {/* MOBILE BACKDROP */}
+      {/* ======================================================
+          MOBILE BACKDROP
+      ====================================================== */}
+
       {mobileMenuOpen && (
         <button
           type="button"
           aria-label="Close admin menu"
           onClick={() =>
-            setMobileMenuOpen(false)
+            setMobileMenuOpen(
+              false
+            )
           }
-          className="fixed inset-0 z-40 bg-black/70 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
         />
       )}
 
-      {/* SIDEBAR */}
+      {/* ======================================================
+          SIDEBAR
+      ====================================================== */}
+
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-[#0A0F18] border-r border-gray-800 transition-transform duration-300 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-surface border-r border-border transition-transform duration-300 ${
           mobileMenuOpen
             ? "translate-x-0"
             : "-translate-x-full"
         } lg:translate-x-0`}
       >
+
         <div className="h-full flex flex-col">
-          <div className="px-6 py-7 border-b border-gray-800">
+
+          {/* BRAND */}
+
+          <div className="px-6 py-7 border-b border-border">
+
             <p className="text-orange-500 text-xs font-black uppercase tracking-[0.3em]">
               Master Calisthenics India
             </p>
@@ -2419,12 +2744,16 @@ export default function Admin() {
               Admin Portal
             </h2>
 
-            <p className="text-gray-500 text-xs mt-2 break-all">
+            <p className="text-text-muted text-xs mt-2 break-all">
               {admin?.email}
             </p>
+
           </div>
 
+          {/* NAVIGATION */}
+
           <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+
             {navigation.map(
               (item) => (
                 <button
@@ -2434,18 +2763,21 @@ export default function Admin() {
                     setActiveTab(
                       item.id
                     );
+
                     setMobileMenuOpen(
                       false
                     );
+
                     clearMessages();
                   }}
                   className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 text-left transition ${
                     activeTab ===
                     item.id
                       ? "bg-orange-500 text-white"
-                      : "text-gray-400 hover:bg-white/5 hover:text-white"
+                      : "text-text-muted hover:bg-bg hover:text-text"
                   }`}
                 >
+
                   <span className="w-6 text-center">
                     {item.icon}
                   </span>
@@ -2458,8 +2790,10 @@ export default function Admin() {
                     "reviews" &&
                     pendingReviews >
                       0 && (
-                      <span className="ml-auto text-[10px] rounded-full bg-yellow-500/20 text-yellow-300 px-2 py-0.5">
-                        {pendingReviews}
+                      <span className="ml-auto text-[10px] rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-300 px-2 py-0.5">
+                        {
+                          pendingReviews
+                        }
                       </span>
                     )}
 
@@ -2467,16 +2801,39 @@ export default function Admin() {
                     "contacts" &&
                     unreadContacts >
                       0 && (
-                      <span className="ml-auto text-[10px] rounded-full bg-red-500/20 text-red-300 px-2 py-0.5">
-                        {unreadContacts}
+                      <span className="ml-auto text-[10px] rounded-full bg-red-500/20 text-red-600 dark:text-red-300 px-2 py-0.5">
+                        {
+                          unreadContacts
+                        }
                       </span>
                     )}
+
                 </button>
               )
             )}
+
           </nav>
 
-          <div className="p-4 border-t border-gray-800">
+          {/* SIDEBAR FOOTER */}
+
+          <div className="p-4 border-t border-border space-y-3">
+
+            <div className="flex items-center justify-between rounded-xl border border-border bg-bg px-4 py-3">
+
+              <div>
+                <p className="text-xs text-text-muted">
+                  Theme
+                </p>
+
+                <p className="text-sm font-semibold">
+                  Appearance
+                </p>
+              </div>
+
+              <ThemeToggle aria-label="Toggle light and dark theme" />
+
+            </div>
+
             <button
               type="button"
               onClick={logout}
@@ -2487,15 +2844,24 @@ export default function Admin() {
             >
               Sign Out
             </button>
+
           </div>
+
         </div>
       </aside>
 
-      {/* CONTENT */}
+      {/* ======================================================
+          MAIN CONTENT
+      ====================================================== */}
+
       <div className="lg:ml-72 min-h-screen">
+
         {/* DESKTOP HEADER */}
-        <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between border-b border-gray-800 bg-[#080C14]/90 backdrop-blur px-8 py-5">
+
+        <header className="hidden lg:flex sticky top-0 z-30 items-center justify-between border-b border-border bg-surface/90 backdrop-blur px-8 py-5">
+
           <div>
+
             <p className="text-orange-500 text-xs uppercase tracking-[0.25em] font-black">
               MCI Control Center
             </p>
@@ -2512,78 +2878,119 @@ export default function Admin() {
                 ? "Community Posts"
                 : activeTab}
             </h1>
+
           </div>
 
           <div className="flex items-center gap-4">
+
+            <ThemeToggle aria-label="Toggle light and dark theme" />
+
             <div className="text-right">
+
               <p className="text-sm font-bold">
                 {admin?.name ||
                   "Administrator"}
               </p>
 
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-text-muted">
                 {admin?.role ||
                   "admin"}
               </p>
+
             </div>
 
-            <div className="w-11 h-11 rounded-full bg-orange-500/15 text-orange-400 flex items-center justify-center font-black">
+            <div className="w-11 h-11 rounded-full bg-orange-500/15 text-orange-500 flex items-center justify-center font-black">
               {String(
                 admin?.name || "A"
               )
                 .charAt(0)
                 .toUpperCase()}
             </div>
+
           </div>
+
         </header>
 
         <main className="p-4 sm:p-6 lg:p-8">
+
+          {/* TOP LOADING BAR */}
+
           {loading && (
-            <div className="fixed top-0 left-0 right-0 lg:left-72 h-1 z-[250] overflow-hidden bg-gray-800">
+            <div className="fixed top-0 left-0 right-0 lg:left-72 h-1 z-[250] overflow-hidden bg-border">
               <div className="w-1/3 h-full bg-orange-500 animate-pulse" />
             </div>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               DASHBOARD
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "dashboard" && (
             <section>
+
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+
                 {[
                   [
                     "Trial Requests",
-                    dashboardBookings,
+                    totalBookings,
                   ],
+
                   [
                     "Programs",
-                    dashboardPrograms,
+                    totalPrograms,
                   ],
+
                   [
                     "Offers",
-                    dashboardOffers,
+                    totalOffers,
                   ],
+
                   [
                     "Trainers",
-                    dashboardTrainers,
+                    totalTrainers,
                   ],
+
                   [
                     "Community Posts",
-                    dashboardPosts,
+                    totalPosts,
                   ],
+
                   [
                     "Reviews",
-                    dashboardReviews,
+                    totalReviews,
                   ],
                 ].map(
                   ([label, value]) => (
-                    <div
+                    <button
+                      type="button"
                       key={label}
-                      className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6"
+                      onClick={() => {
+                        const tabMap = {
+                          "Trial Requests":
+                            "bookings",
+                          Programs:
+                            "programs",
+                          Offers:
+                            "offers",
+                          Trainers:
+                            "trainers",
+                          "Community Posts":
+                            "posts",
+                          Reviews:
+                            "reviews",
+                        };
+
+                        setActiveTab(
+                          tabMap[label] ||
+                            "dashboard"
+                        );
+                      }}
+                      className="text-left rounded-2xl border border-border bg-surface p-6 hover:border-orange-500/40 hover:-translate-y-0.5 transition"
                     >
-                      <p className="text-sm text-gray-500">
+
+                      <p className="text-sm text-text-muted">
                         {label}
                       </p>
 
@@ -2592,13 +2999,19 @@ export default function Admin() {
                           value
                         )}
                       </p>
-                    </div>
+
+                    </button>
                   )
                 )}
+
               </div>
 
               <div className="grid xl:grid-cols-2 gap-6 mt-7">
-                <div className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6">
+
+                {/* PENDING ACTIONS */}
+
+                <div className="rounded-2xl border border-border bg-surface p-6">
+
                   <p className="text-orange-500 text-xs uppercase tracking-wider font-black">
                     Attention
                   </p>
@@ -2608,6 +3021,7 @@ export default function Admin() {
                   </h2>
 
                   <div className="space-y-3">
+
                     <button
                       type="button"
                       onClick={() =>
@@ -2615,17 +3029,19 @@ export default function Admin() {
                           "reviews"
                         )
                       }
-                      className="w-full flex items-center justify-between rounded-xl border border-gray-800 bg-[#0B0F19] px-4 py-3 hover:border-orange-500/40 transition"
+                      className="w-full flex items-center justify-between rounded-xl border border-border bg-bg px-4 py-3 hover:border-orange-500/40 transition"
                     >
+
                       <span>
                         Pending Reviews
                       </span>
 
-                      <span className="font-black text-orange-400">
+                      <span className="font-black text-orange-500">
                         {
                           pendingReviews
                         }
                       </span>
+
                     </button>
 
                     <button
@@ -2635,22 +3051,29 @@ export default function Admin() {
                           "contacts"
                         )
                       }
-                      className="w-full flex items-center justify-between rounded-xl border border-gray-800 bg-[#0B0F19] px-4 py-3 hover:border-orange-500/40 transition"
+                      className="w-full flex items-center justify-between rounded-xl border border-border bg-bg px-4 py-3 hover:border-orange-500/40 transition"
                     >
+
                       <span>
                         Unread Messages
                       </span>
 
-                      <span className="font-black text-orange-400">
+                      <span className="font-black text-orange-500">
                         {
                           unreadContacts
                         }
                       </span>
+
                     </button>
+
                   </div>
+
                 </div>
 
-                <div className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6">
+                {/* ACCOUNT */}
+
+                <div className="rounded-2xl border border-border bg-surface p-6">
+
                   <p className="text-orange-500 text-xs uppercase tracking-wider font-black">
                     Authentication
                   </p>
@@ -2660,27 +3083,32 @@ export default function Admin() {
                       "Administrator"}
                   </h2>
 
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="text-text-muted text-sm mt-1">
                     {admin?.email}
                   </p>
 
-                  <p className="text-orange-400 text-xs mt-4 uppercase tracking-wider">
+                  <p className="text-orange-500 text-xs mt-4 uppercase tracking-wider">
                     {admin?.role ||
                       "administrator"}
                   </p>
+
                 </div>
+
               </div>
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               BOOKINGS
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "bookings" && (
             <section>
+
               <div className="flex flex-col md:flex-row gap-3 mb-6">
+
                 <input
                   value={
                     bookingSearch
@@ -2689,7 +3117,9 @@ export default function Admin() {
                     setBookingSearch(
                       event.target.value
                     );
-                    setBookingPage(1);
+                    setBookingPage(
+                      1
+                    );
                   }}
                   placeholder="Search name, email or phone..."
                   className={
@@ -2705,12 +3135,15 @@ export default function Admin() {
                     setBookingStatus(
                       event.target.value
                     );
-                    setBookingPage(1);
+                    setBookingPage(
+                      1
+                    );
                   }}
                   className={
                     inputClass
                   }
                 >
+
                   <option value="">
                     All statuses
                   </option>
@@ -2730,14 +3163,21 @@ export default function Admin() {
                   <option value="cancelled">
                     Cancelled
                   </option>
+
                 </select>
+
               </div>
 
-              <div className="rounded-2xl border border-gray-800 bg-[#0F172A] overflow-hidden">
+              <div className="rounded-2xl border border-border bg-surface overflow-hidden">
+
                 <div className="overflow-x-auto">
+
                   <table className="min-w-[1050px] w-full text-sm">
-                    <thead className="border-b border-gray-800 text-gray-500">
+
+                    <thead className="border-b border-border text-text-muted">
+
                       <tr>
+
                         <th className="text-left px-5 py-4">
                           Name
                         </th>
@@ -2761,19 +3201,24 @@ export default function Admin() {
                         <th className="text-left px-5 py-4">
                           Action
                         </th>
+
                       </tr>
+
                     </thead>
 
-                    <tbody className="divide-y divide-gray-800">
+                    <tbody className="divide-y divide-border">
+
                       {bookings.length ===
                       0 ? (
                         <tr>
+
                           <td
                             colSpan="6"
-                            className="px-5 py-12 text-center text-gray-600"
+                            className="px-5 py-12 text-center text-text-muted"
                           >
                             No trial requests found.
                           </td>
+
                         </tr>
                       ) : (
                         bookings.map(
@@ -2782,16 +3227,21 @@ export default function Admin() {
                               key={
                                 booking.id
                               }
+                              className="hover:bg-bg/70 transition"
                             >
+
                               <td className="px-5 py-4">
+
                                 <p className="font-semibold">
                                   {booking.name ||
                                     booking.full_name ||
                                     "—"}
                                 </p>
+
                               </td>
 
-                              <td className="px-5 py-4 text-gray-400">
+                              <td className="px-5 py-4 text-text-muted">
+
                                 <div>
                                   {
                                     booking.email
@@ -2803,15 +3253,17 @@ export default function Admin() {
                                     booking.phone
                                   }
                                 </div>
+
                               </td>
 
-                              <td className="px-5 py-4 text-gray-400">
+                              <td className="px-5 py-4 text-text-muted">
                                 {booking.program ||
                                   booking.program_name ||
                                   "—"}
                               </td>
 
                               <td className="px-5 py-4">
+
                                 <select
                                   value={
                                     booking.status ||
@@ -2827,8 +3279,9 @@ export default function Admin() {
                                         .value
                                     )
                                   }
-                                  className="rounded-lg border border-gray-700 bg-[#0B0F19] px-3 py-2"
+                                  className="rounded-lg border border-border bg-bg px-3 py-2 text-text"
                                 >
+
                                   <option value="pending">
                                     Pending
                                   </option>
@@ -2844,16 +3297,19 @@ export default function Admin() {
                                   <option value="cancelled">
                                     Cancelled
                                   </option>
+
                                 </select>
+
                               </td>
 
-                              <td className="px-5 py-4 text-gray-500">
+                              <td className="px-5 py-4 text-text-muted">
                                 {formatDate(
                                   booking.created_at
                                 )}
                               </td>
 
                               <td className="px-5 py-4">
+
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -2861,21 +3317,27 @@ export default function Admin() {
                                       booking.id
                                     )
                                   }
-                                  className="text-red-400 hover:text-red-300"
+                                  className="text-red-500 hover:text-red-400"
                                 >
                                   Delete
                                 </button>
+
                               </td>
+
                             </tr>
                           )
                         )
                       )}
+
                     </tbody>
+
                   </table>
+
                 </div>
 
-                <div className="border-t border-gray-800 px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <p className="text-sm text-gray-500">
+                <div className="border-t border-border px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+
+                  <p className="text-sm text-text-muted">
                     {formatNumber(
                       bookingTotal
                     )}{" "}
@@ -2883,6 +3345,7 @@ export default function Admin() {
                   </p>
 
                   <div className="flex items-center gap-3">
+
                     <button
                       type="button"
                       disabled={
@@ -2894,7 +3357,8 @@ export default function Admin() {
                           (page) =>
                             Math.max(
                               1,
-                              page - 1
+                              page -
+                                1
                             )
                         )
                       }
@@ -2905,7 +3369,7 @@ export default function Admin() {
                       Previous
                     </button>
 
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-text-muted">
                       {bookingPage} /{" "}
                       {
                         bookingTotalPages
@@ -2923,7 +3387,8 @@ export default function Admin() {
                           (page) =>
                             Math.min(
                               bookingTotalPages,
-                              page + 1
+                              page +
+                                1
                             )
                         )
                       }
@@ -2933,20 +3398,26 @@ export default function Admin() {
                     >
                       Next
                     </button>
+
                   </div>
+
                 </div>
+
               </div>
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               CONTACTS
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "contacts" && (
             <section>
+
               <div className="flex flex-col md:flex-row gap-3 mb-6">
+
                 <input
                   value={
                     contactSearch
@@ -2975,6 +3446,7 @@ export default function Admin() {
                     inputClass
                   }
                 >
+
                   <option value="all">
                     All
                   </option>
@@ -2986,13 +3458,16 @@ export default function Admin() {
                   <option value="read">
                     Read
                   </option>
+
                 </select>
+
               </div>
 
               <div className="space-y-4">
+
                 {contacts.length ===
                 0 ? (
-                  <div className="rounded-2xl border border-gray-800 bg-[#0F172A] p-12 text-center text-gray-600">
+                  <div className="rounded-2xl border border-border bg-surface p-12 text-center text-text-muted">
                     No contact queries found.
                   </div>
                 ) : (
@@ -3002,27 +3477,33 @@ export default function Admin() {
                         key={
                           contact.id
                         }
-                        className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6"
+                        className="rounded-2xl border border-border bg-surface p-6"
                       >
+
                         <div className="flex flex-col lg:flex-row justify-between gap-4">
+
                           <div>
+
                             <h3 className="font-bold text-lg">
                               {contact.name ||
                                 contact.full_name ||
                                 "Unknown"}
                             </h3>
 
-                            <p className="text-sm text-gray-500 mt-1">
-                              {contact.email ||
-                                "—"}
+                            <p className="text-sm text-text-muted mt-1">
+                              {
+                                contact.email
+                              }
 
                               {contact.phone
                                 ? ` • ${contact.phone}`
                                 : ""}
                             </p>
+
                           </div>
 
                           <div className="flex items-center gap-3">
+
                             <StatusBadge
                               value={
                                 Number(
@@ -3063,44 +3544,53 @@ export default function Admin() {
                                   contact.id
                                 )
                               }
-                              className="text-red-400 hover:text-red-300 text-sm"
+                              className="text-red-500 hover:text-red-400 text-sm"
                             >
                               Delete
                             </button>
+
                           </div>
+
                         </div>
 
-                        <p className="text-gray-400 leading-7 mt-5 whitespace-pre-wrap">
+                        <p className="text-text-muted leading-7 mt-5 whitespace-pre-wrap">
                           {contact.message ||
                             "—"}
                         </p>
 
-                        <p className="text-xs text-gray-600 mt-4">
+                        <p className="text-xs text-text-muted mt-4">
                           {formatDate(
                             contact.created_at
                           )}
                         </p>
+
                       </article>
                     )
                   )
                 )}
+
               </div>
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               PROGRAMS
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "programs" && (
             <section className="grid xl:grid-cols-[430px_1fr] gap-6">
+
+              {/* FORM */}
+
               <form
                 onSubmit={
                   saveProgram
                 }
-                className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6 h-fit"
+                className="rounded-2xl border border-border bg-surface p-6 h-fit"
               >
+
                 <p className="text-orange-500 text-xs uppercase tracking-widest font-black">
                   Program CMS
                 </p>
@@ -3112,6 +3602,7 @@ export default function Admin() {
                 </h2>
 
                 <div className="space-y-4">
+
                   <Field
                     label="Title"
                     required
@@ -3134,6 +3625,7 @@ export default function Admin() {
                       className={
                         inputClass
                       }
+                      placeholder="Group Batch Training"
                     />
                   </Field>
 
@@ -3156,10 +3648,12 @@ export default function Admin() {
                       className={
                         inputClass
                       }
+                      placeholder="Calisthenics + functional fitness"
                     />
                   </Field>
 
                   <div className="grid grid-cols-2 gap-3">
+
                     <Field label="Icon">
                       <input
                         value={
@@ -3200,9 +3694,10 @@ export default function Admin() {
                             })
                           )
                         }
-                        className="w-full h-[48px] rounded-xl border border-gray-700 bg-[#0B0F19] p-1"
+                        className="w-full h-[48px] rounded-xl border border-border bg-bg p-1"
                       />
                     </Field>
+
                   </div>
 
                   <Field label="Features — one per line">
@@ -3230,7 +3725,7 @@ export default function Admin() {
                     />
                   </Field>
 
-                  <Field label="Pricing — one per line: Name | Price">
+                  <Field label="Pricing — Name | Price">
                     <textarea
                       value={
                         programForm.pricing
@@ -3250,12 +3745,13 @@ export default function Admin() {
                         textareaClass
                       }
                       placeholder={
-                        "1 Month | ₹4,000\n3 Months | ₹10,999"
+                        "1 Month | ₹4,000\n3 Months | ₹10,999\n6 Months | ₹18,999"
                       }
                     />
                   </Field>
 
                   <div className="grid grid-cols-2 gap-3">
+
                     <Field label="Sort Order">
                       <input
                         type="number"
@@ -3279,7 +3775,8 @@ export default function Admin() {
                       />
                     </Field>
 
-                    <label className="flex items-center gap-3 text-sm text-gray-300 pt-8">
+                    <label className="flex items-center gap-3 text-sm text-text-muted pt-8">
+
                       <input
                         type="checkbox"
                         checked={
@@ -3290,18 +3787,23 @@ export default function Admin() {
                             (form) => ({
                               ...form,
                               active:
-                                event.target
+                                event
+                                  .target
                                   .checked,
                             })
                           )
                         }
                         className="accent-orange-500"
                       />
+
                       Active
+
                     </label>
+
                   </div>
 
-                  <label className="flex items-center gap-3 text-sm text-gray-300">
+                  <label className="flex items-center gap-3 text-sm text-text-muted">
+
                     <input
                       type="checkbox"
                       checked={
@@ -3312,7 +3814,8 @@ export default function Admin() {
                           (form) => ({
                             ...form,
                             is_featured:
-                              event.target
+                              event
+                                .target
                                 .checked,
                           })
                         )
@@ -3321,13 +3824,12 @@ export default function Admin() {
                     />
 
                     Featured / Most Popular
+
                   </label>
 
                   <button
                     type="submit"
-                    disabled={
-                      loading
-                    }
+                    disabled={loading}
                     className={
                       buttonPrimary +
                       " w-full"
@@ -3352,14 +3854,27 @@ export default function Admin() {
                       Cancel Editing
                     </button>
                   )}
+
                 </div>
+
               </form>
 
+              {/* LIST */}
+
               <div className="space-y-4">
+
                 {programs.length ===
                 0 ? (
-                  <div className="rounded-2xl border border-gray-800 bg-[#0F172A] p-12 text-center text-gray-600">
-                    No programs found.
+                  <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+
+                    <div className="text-4xl mb-4">
+                      ◈
+                    </div>
+
+                    <p className="text-text-muted">
+                      No programs found.
+                    </p>
+
                   </div>
                 ) : (
                   programs.map(
@@ -3368,17 +3883,15 @@ export default function Admin() {
                         key={
                           program.id
                         }
-                        className={`rounded-2xl border bg-[#0F172A] p-6 ${
-                          normalizeBoolean(
-                            program.active
-                          )
-                            ? "border-gray-800"
-                            : "border-red-500/20 opacity-70"
-                        }`}
+                        className="rounded-2xl border border-border bg-surface p-6"
                       >
+
                         <div className="flex items-start justify-between gap-4">
+
                           <div className="flex-1">
+
                             <div className="flex flex-wrap items-center gap-2">
+
                               <StatusBadge
                                 value={
                                   normalizeBoolean(
@@ -3394,22 +3907,41 @@ export default function Admin() {
                               ) && (
                                 <StatusBadge value="featured" />
                               )}
+
                             </div>
 
-                            <h3 className="text-2xl font-black mt-3">
-                              {
-                                program.title
-                              }
-                            </h3>
+                            <div className="flex items-start gap-3 mt-3">
 
-                            <p className="text-gray-500 mt-1">
-                              {
-                                program.subtitle
-                              }
-                            </p>
+                              {program.icon && (
+                                <span className="text-3xl">
+                                  {
+                                    program.icon
+                                  }
+                                </span>
+                              )}
+
+                              <div>
+
+                                <h3 className="text-2xl font-black">
+                                  {
+                                    program.title
+                                  }
+                                </h3>
+
+                                <p className="text-text-muted mt-1">
+                                  {
+                                    program.subtitle
+                                  }
+                                </p>
+
+                              </div>
+
+                            </div>
+
                           </div>
 
                           <div className="flex gap-2">
+
                             <button
                               type="button"
                               onClick={() =>
@@ -3437,29 +3969,25 @@ export default function Admin() {
                             >
                               Delete
                             </button>
+
                           </div>
+
                         </div>
 
-                        {program.icon && (
-                          <div className="mt-5 text-3xl">
-                            {
-                              program.icon
-                            }
-                          </div>
-                        )}
+                        <div className="mt-6">
 
-                        <div className="mt-5">
-                          <p className="text-xs uppercase tracking-wider text-gray-600 mb-2">
+                          <p className="text-xs uppercase tracking-wider text-text-muted mb-2">
                             Features
                           </p>
 
-                          <ul className="space-y-1 text-sm text-gray-400">
+                          <ul className="space-y-1 text-sm text-text-muted">
+
                             {safeArray(
                               program.features
                             )
                               .slice(
                                 0,
-                                8
+                                10
                               )
                               .map(
                                 (
@@ -3478,18 +4006,23 @@ export default function Admin() {
                                     {String(
                                       feature
                                     )}
+
                                   </li>
                                 )
                               )}
+
                           </ul>
+
                         </div>
 
-                        <div className="mt-5">
-                          <p className="text-xs uppercase tracking-wider text-gray-600 mb-2">
+                        <div className="mt-6">
+
+                          <p className="text-xs uppercase tracking-wider text-text-muted mb-2">
                             Pricing
                           </p>
 
                           <div className="flex flex-wrap gap-2">
+
                             {safeArray(
                               program.pricing
                             ).map(
@@ -3504,13 +4037,13 @@ export default function Admin() {
                                     key={
                                       index
                                     }
-                                    className="rounded-lg border border-gray-800 bg-[#0B0F19] px-3 py-2 text-xs text-gray-400"
+                                    className="rounded-lg border border-border bg-bg px-3 py-2 text-xs text-text-muted"
                                   >
                                     {
                                       pair[0]
                                     }{" "}
                                     —{" "}
-                                    <strong className="text-white">
+                                    <strong className="text-text">
                                       {
                                         pair[1]
                                       }
@@ -3518,29 +4051,38 @@ export default function Admin() {
                                   </span>
                                 )
                             )}
+
                           </div>
+
                         </div>
+
                       </article>
                     )
                   )
                 )}
+
               </div>
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               OFFERS
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "offers" && (
             <section className="grid xl:grid-cols-[430px_1fr] gap-6">
+
+              {/* OFFER FORM */}
+
               <form
                 onSubmit={
                   saveOffer
                 }
-                className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6 h-fit"
+                className="rounded-2xl border border-border bg-surface p-6 h-fit"
               >
+
                 <p className="text-orange-500 text-xs uppercase tracking-widest font-black">
                   Offers CMS
                 </p>
@@ -3552,6 +4094,7 @@ export default function Admin() {
                 </h2>
 
                 <div className="space-y-4">
+
                   <Field
                     label="Offer Title"
                     required
@@ -3571,10 +4114,10 @@ export default function Admin() {
                           })
                         )
                       }
-                      placeholder="Summer Strength Offer"
                       className={
                         inputClass
                       }
+                      placeholder="Summer Strength Offer"
                     />
                   </Field>
 
@@ -3594,14 +4137,15 @@ export default function Admin() {
                           })
                         )
                       }
-                      placeholder="Limited time offer for new members..."
                       className={
                         textareaClass
                       }
+                      placeholder="Limited-time offer for new members..."
                     />
                   </Field>
 
                   <Field label="Discount Type">
+
                     <select
                       value={
                         offerForm.discount_type
@@ -3621,6 +4165,7 @@ export default function Admin() {
                         inputClass
                       }
                     >
+
                       <option value="percentage">
                         Percentage
                       </option>
@@ -3632,12 +4177,15 @@ export default function Admin() {
                       <option value="text">
                         Custom Text
                       </option>
+
                     </select>
+
                   </Field>
 
                   {offerForm.discount_type !==
                     "text" && (
                     <Field label="Discount Value">
+
                       <input
                         type="number"
                         step="0.01"
@@ -3666,10 +4214,12 @@ export default function Admin() {
                           inputClass
                         }
                       />
+
                     </Field>
                   )}
 
                   <Field label="Promo Code">
+
                     <input
                       value={
                         offerForm.promo_code
@@ -3691,9 +4241,11 @@ export default function Admin() {
                         inputClass
                       }
                     />
+
                   </Field>
 
                   <div className="grid grid-cols-2 gap-3">
+
                     <Field label="Start Date">
                       <input
                         type="date"
@@ -3739,9 +4291,11 @@ export default function Admin() {
                         }
                       />
                     </Field>
+
                   </div>
 
                   <Field label="Sort Order">
+
                     <input
                       type="number"
                       value={
@@ -3762,9 +4316,11 @@ export default function Admin() {
                         inputClass
                       }
                     />
+
                   </Field>
 
-                  <label className="flex items-center gap-3 text-sm text-gray-300">
+                  <label className="flex items-center gap-3 text-sm text-text-muted">
+
                     <input
                       type="checkbox"
                       checked={
@@ -3784,9 +4340,11 @@ export default function Admin() {
                     />
 
                     Active / Visible
+
                   </label>
 
-                  <label className="flex items-center gap-3 text-sm text-gray-300">
+                  <label className="flex items-center gap-3 text-sm text-text-muted">
+
                     <input
                       type="checkbox"
                       checked={
@@ -3806,13 +4364,12 @@ export default function Admin() {
                     />
 
                     Featured Offer
+
                   </label>
 
                   <button
                     type="submit"
-                    disabled={
-                      loading
-                    }
+                    disabled={loading}
                     className={
                       buttonPrimary +
                       " w-full"
@@ -3837,14 +4394,31 @@ export default function Admin() {
                       Cancel Editing
                     </button>
                   )}
+
                 </div>
+
               </form>
 
+              {/* OFFERS LIST */}
+
               <div className="space-y-4">
+
                 {offers.length ===
                 0 ? (
-                  <div className="rounded-2xl border border-gray-800 bg-[#0F172A] p-12 text-center text-gray-600">
-                    No offers found.
+                  <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+
+                    <div className="text-5xl mb-4">
+                      🔥
+                    </div>
+
+                    <h3 className="font-black text-xl">
+                      No offers yet
+                    </h3>
+
+                    <p className="text-text-muted mt-2">
+                      Create your first offer using the form.
+                    </p>
+
                   </div>
                 ) : (
                   offers.map(
@@ -3853,11 +4427,15 @@ export default function Admin() {
                         key={
                           offer.id
                         }
-                        className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6"
+                        className="rounded-2xl border border-border bg-surface p-6"
                       >
+
                         <div className="flex items-start justify-between gap-4">
+
                           <div className="flex-1">
+
                             <div className="flex flex-wrap items-center gap-2">
+
                               <StatusBadge
                                 value={
                                   normalizeBoolean(
@@ -3873,6 +4451,7 @@ export default function Admin() {
                               ) && (
                                 <StatusBadge value="featured" />
                               )}
+
                             </div>
 
                             <h3 className="text-2xl font-black mt-3">
@@ -3882,15 +4461,17 @@ export default function Admin() {
                             </h3>
 
                             {offer.description && (
-                              <p className="text-gray-500 mt-2 leading-relaxed">
+                              <p className="text-text-muted mt-2 leading-relaxed">
                                 {
                                   offer.description
                                 }
                               </p>
                             )}
+
                           </div>
 
                           <div className="flex gap-2">
+
                             <button
                               type="button"
                               onClick={() =>
@@ -3918,67 +4499,53 @@ export default function Admin() {
                             >
                               Delete
                             </button>
+
                           </div>
+
                         </div>
 
-                        <div className="mt-5 rounded-2xl bg-orange-500/10 border border-orange-500/20 p-5">
-                          <p className="text-orange-400 text-xs uppercase tracking-wider">
+                        <div className="mt-6 rounded-2xl bg-orange-500/10 border border-orange-500/20 p-5">
+
+                          <p className="text-orange-500 text-xs uppercase tracking-wider">
                             Discount
                           </p>
 
                           <p className="text-3xl font-black mt-1">
-                            {offer.discount_type ===
-                            "percentage"
-                              ? `${offer.discount_value}% OFF`
-                              : offer.discount_type ===
-                                "fixed"
-                              ? `₹${Number(
-                                  offer.discount_value ||
-                                    0
-                                ).toLocaleString(
-                                  "en-IN"
-                                )} OFF`
-                              : "CUSTOM OFFER"}
+                            {formatOfferDiscount(
+                              offer
+                            )}
                           </p>
 
                           {offer.promo_code && (
-                            <p className="text-sm text-gray-400 mt-3">
+                            <p className="text-sm text-text-muted mt-3">
                               Code:{" "}
-                              <strong className="text-white tracking-wider">
+                              <strong className="text-text tracking-wider">
                                 {
                                   offer.promo_code
                                 }
                               </strong>
                             </p>
                           )}
+
                         </div>
 
-                        <div className="mt-4 flex flex-wrap gap-3 text-xs text-gray-500">
+                        <div className="mt-4 flex flex-wrap gap-4 text-xs text-text-muted">
+
                           {offer.start_date && (
                             <span>
                               Start:{" "}
-                              {
-                                String(
-                                  offer.start_date
-                                ).slice(
-                                  0,
-                                  10
-                                )
-                              }
+                              {formatDateOnly(
+                                offer.start_date
+                              )}
                             </span>
                           )}
 
                           {offer.end_date && (
                             <span>
                               End:{" "}
-                              {
-                                String(
-                                  offer.end_date
-                                ).slice(
-                                  0,
-                                  10
-                                )
-                              }
+                              {formatDateOnly(
+                                offer.end_date
+                              )}
                             </span>
                           )}
 
@@ -3989,28 +4556,34 @@ export default function Admin() {
                               0
                             }
                           </span>
+
                         </div>
+
                       </article>
                     )
                   )
                 )}
+
               </div>
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               POSTS
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "posts" && (
             <section className="grid xl:grid-cols-[420px_1fr] gap-6">
+
               <form
                 onSubmit={
                   createPost
                 }
-                className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6 h-fit"
+                className="rounded-2xl border border-border bg-surface p-6 h-fit"
               >
+
                 <p className="text-orange-500 text-xs uppercase tracking-widest font-black">
                   Community
                 </p>
@@ -4020,6 +4593,7 @@ export default function Admin() {
                 </h2>
 
                 <div className="space-y-4">
+
                   <Field
                     label="Title"
                     required
@@ -4068,6 +4642,7 @@ export default function Admin() {
                   </Field>
 
                   <Field label="Type">
+
                     <select
                       value={
                         postForm.post_type
@@ -4087,6 +4662,7 @@ export default function Admin() {
                         inputClass
                       }
                     >
+
                       <option value="announcement">
                         Announcement
                       </option>
@@ -4102,7 +4678,9 @@ export default function Admin() {
                       <option value="video">
                         Video
                       </option>
+
                     </select>
+
                   </Field>
 
                   <Field
@@ -4153,10 +4731,12 @@ export default function Admin() {
                   </Field>
 
                   <Field label="Image">
+
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(event) => {
+
                         const file =
                           event.target.files?.[0] ||
                           null;
@@ -4174,9 +4754,11 @@ export default function Admin() {
                                 : null,
                           })
                         );
+
                       }}
-                      className="w-full text-sm text-gray-400"
+                      className="w-full text-sm text-text-muted"
                     />
+
                   </Field>
 
                   {postForm.preview && (
@@ -4185,15 +4767,13 @@ export default function Admin() {
                         postForm.preview
                       }
                       alt="Post preview"
-                      className="w-full h-44 object-cover rounded-xl"
+                      className="w-full h-44 object-cover rounded-xl border border-border"
                     />
                   )}
 
                   <button
                     type="submit"
-                    disabled={
-                      loading
-                    }
+                    disabled={loading}
                     className={
                       buttonPrimary +
                       " w-full"
@@ -4201,13 +4781,16 @@ export default function Admin() {
                   >
                     Create Post
                   </button>
+
                 </div>
+
               </form>
 
               <div className="space-y-4">
+
                 {posts.length ===
                 0 ? (
-                  <div className="rounded-2xl border border-gray-800 bg-[#0F172A] p-12 text-center text-gray-600">
+                  <div className="rounded-2xl border border-border bg-surface p-12 text-center text-text-muted">
                     No posts found.
                   </div>
                 ) : (
@@ -4217,8 +4800,9 @@ export default function Admin() {
                         key={
                           post.id
                         }
-                        className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6"
+                        className="rounded-2xl border border-border bg-surface p-6"
                       >
+
                         {post.image_url && (
                           <img
                             src={
@@ -4227,20 +4811,23 @@ export default function Admin() {
                             alt={
                               post.title
                             }
-                            className="w-full h-52 object-cover rounded-xl mb-5"
+                            className="w-full h-52 object-cover rounded-xl mb-5 border border-border"
                           />
                         )}
 
                         <div className="flex justify-between gap-4">
-                          <div>
-                            <StatusBadge
-                              value={
-                                post.post_type ||
-                                "post"
-                              }
-                            />
 
-                            <div className="flex flex-wrap gap-2 mt-2">
+                          <div>
+
+                            <div className="flex flex-wrap gap-2">
+
+                              <StatusBadge
+                                value={
+                                  post.post_type ||
+                                  "post"
+                                }
+                              />
+
                               <StatusBadge
                                 value={
                                   normalizeBoolean(
@@ -4250,6 +4837,7 @@ export default function Admin() {
                                     : "unpublished"
                                 }
                               />
+
                             </div>
 
                             <h3 className="font-black text-xl mt-3">
@@ -4258,14 +4846,16 @@ export default function Admin() {
                               }
                             </h3>
 
-                            <p className="text-gray-500 text-sm mt-1">
+                            <p className="text-text-muted text-sm mt-1">
                               {
                                 post.author
                               }
                             </p>
+
                           </div>
 
                           <div className="flex flex-col items-end gap-3">
+
                             <button
                               type="button"
                               onClick={() =>
@@ -4273,7 +4863,7 @@ export default function Admin() {
                                   post.id
                                 )
                               }
-                              className="text-orange-400 hover:text-orange-300 text-sm"
+                              className="text-orange-500 hover:text-orange-400 text-sm"
                             >
                               {normalizeBoolean(
                                 post.published
@@ -4289,45 +4879,52 @@ export default function Admin() {
                                   post.id
                                 )
                               }
-                              className="text-red-400 hover:text-red-300 text-sm"
+                              className="text-red-500 hover:text-red-400 text-sm"
                             >
                               Delete
                             </button>
+
                           </div>
+
                         </div>
 
-                        <p className="text-gray-400 mt-5 leading-7">
+                        <p className="text-text-muted mt-5 leading-7">
                           {
                             post.content
                           }
                         </p>
 
-                        <p className="text-xs text-gray-600 mt-4">
+                        <p className="text-xs text-text-muted mt-4">
                           {formatDate(
                             post.created_at
                           )}
                         </p>
+
                       </article>
                     )
                   )
                 )}
+
               </div>
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               TRAINERS
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "trainers" && (
             <section className="grid xl:grid-cols-[400px_1fr] gap-6">
+
               <form
                 onSubmit={
                   createTrainer
                 }
-                className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6 h-fit"
+                className="rounded-2xl border border-border bg-surface p-6 h-fit"
               >
+
                 <p className="text-orange-500 text-xs uppercase tracking-widest font-black">
                   Team
                 </p>
@@ -4337,6 +4934,7 @@ export default function Admin() {
                 </h2>
 
                 <div className="space-y-4">
+
                   <Field
                     label="Name"
                     required
@@ -4388,6 +4986,7 @@ export default function Admin() {
                   </Field>
 
                   <Field label="Bio">
+
                     <textarea
                       value={
                         trainerForm.bio
@@ -4407,13 +5006,16 @@ export default function Admin() {
                         textareaClass
                       }
                     />
+
                   </Field>
 
                   <Field label="Image">
+
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(event) => {
+
                         const file =
                           event.target.files?.[0] ||
                           null;
@@ -4431,9 +5033,11 @@ export default function Admin() {
                                 : null,
                           })
                         );
+
                       }}
-                      className="w-full text-sm text-gray-400"
+                      className="w-full text-sm text-text-muted"
                     />
+
                   </Field>
 
                   {trainerForm.preview && (
@@ -4442,15 +5046,13 @@ export default function Admin() {
                         trainerForm.preview
                       }
                       alt="Trainer preview"
-                      className="w-full h-52 object-cover rounded-xl"
+                      className="w-full h-52 object-cover rounded-xl border border-border"
                     />
                   )}
 
                   <button
                     type="submit"
-                    disabled={
-                      loading
-                    }
+                    disabled={loading}
                     className={
                       buttonPrimary +
                       " w-full"
@@ -4458,13 +5060,16 @@ export default function Admin() {
                   >
                     Add Trainer
                   </button>
+
                 </div>
+
               </form>
 
               <div className="grid sm:grid-cols-2 2xl:grid-cols-3 gap-5">
+
                 {trainers.length ===
                 0 ? (
-                  <div className="sm:col-span-2 2xl:col-span-3 rounded-2xl border border-gray-800 bg-[#0F172A] p-12 text-center text-gray-600">
+                  <div className="sm:col-span-2 2xl:col-span-3 rounded-2xl border border-border bg-surface p-12 text-center text-text-muted">
                     No trainers found.
                   </div>
                 ) : (
@@ -4474,8 +5079,9 @@ export default function Admin() {
                         key={
                           trainer.id
                         }
-                        className="overflow-hidden rounded-2xl border border-gray-800 bg-[#0F172A]"
+                        className="overflow-hidden rounded-2xl border border-border bg-surface"
                       >
+
                         {trainer.image_url ||
                         trainer.image ? (
                           <img
@@ -4489,26 +5095,27 @@ export default function Admin() {
                             className="w-full h-64 object-cover"
                           />
                         ) : (
-                          <div className="w-full h-64 flex items-center justify-center bg-gradient-to-br from-orange-500/20 to-orange-900/10 text-7xl opacity-40">
+                          <div className="w-full h-64 flex items-center justify-center bg-orange-500/10 text-7xl opacity-60">
                             👤
                           </div>
                         )}
 
                         <div className="p-5">
+
                           <h3 className="text-xl font-black">
                             {
                               trainer.name
                             }
                           </h3>
 
-                          <p className="text-orange-400 text-sm mt-1">
+                          <p className="text-orange-500 text-sm mt-1">
                             {
                               trainer.role
                             }
                           </p>
 
                           {trainer.bio && (
-                            <p className="text-gray-500 text-sm leading-6 mt-3">
+                            <p className="text-text-muted text-sm leading-6 mt-3">
                               {
                                 trainer.bio
                               }
@@ -4522,34 +5129,40 @@ export default function Admin() {
                                 trainer.id
                               )
                             }
-                            className="text-red-400 text-sm mt-5 hover:text-red-300"
+                            className="text-red-500 text-sm mt-5 hover:text-red-400"
                           >
                             Delete Trainer
                           </button>
+
                         </div>
+
                       </article>
                     )
                   )
                 )}
+
               </div>
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               REVIEWS
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "reviews" && (
             <section className="space-y-4">
+
               {reviews.length ===
               0 ? (
-                <div className="rounded-2xl border border-gray-800 bg-[#0F172A] p-12 text-center text-gray-600">
+                <div className="rounded-2xl border border-border bg-surface p-12 text-center text-text-muted">
                   No reviews found.
                 </div>
               ) : (
                 reviews.map(
                   (review) => {
+
                     const rating =
                       Math.max(
                         0,
@@ -4577,11 +5190,15 @@ export default function Admin() {
                         key={
                           review.id
                         }
-                        className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6"
+                        className="rounded-2xl border border-border bg-surface p-6"
                       >
+
                         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+
                           <div className="flex-1">
+
                             <div className="flex flex-wrap items-center gap-2">
+
                               <h3 className="font-black text-lg">
                                 {
                                   review.name ||
@@ -4611,29 +5228,33 @@ export default function Admin() {
                               ) && (
                                 <StatusBadge value="featured" />
                               )}
+
                             </div>
 
-                            <div className="text-orange-400 mt-2 text-lg tracking-wider">
+                            <div className="text-orange-500 mt-2 text-lg tracking-wider">
+
                               {"★".repeat(
                                 rating
                               )}
-                              <span className="text-gray-700">
+
+                              <span className="text-text-muted/30">
                                 {"★".repeat(
                                   5 -
                                     rating
                                 )}
                               </span>
+
                             </div>
 
                             {review.program && (
-                              <p className="text-gray-600 text-xs mt-2">
+                              <p className="text-text-muted text-xs mt-2">
                                 {
                                   review.program
                                 }
                               </p>
                             )}
 
-                            <p className="text-gray-300 italic mt-5 leading-7">
+                            <p className="text-text-muted italic mt-5 leading-7">
                               “
                               {review.review_text ||
                                 review.review ||
@@ -4642,16 +5263,18 @@ export default function Admin() {
                             </p>
 
                             {review.google_review_id && (
-                              <p className="text-xs text-gray-700 mt-4 break-all">
+                              <p className="text-xs text-text-muted mt-4 break-all">
                                 Google Review ID:{" "}
                                 {
                                   review.google_review_id
                                 }
                               </p>
                             )}
+
                           </div>
 
                           <div className="flex flex-wrap lg:flex-col gap-2">
+
                             {!approved && (
                               <button
                                 type="button"
@@ -4660,7 +5283,7 @@ export default function Admin() {
                                     review.id
                                   )
                                 }
-                                className="rounded-xl bg-green-500/10 border border-green-500/20 text-green-300 px-4 py-2 text-sm font-semibold hover:bg-green-500/20 transition"
+                                className="rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-300 px-4 py-2 text-sm font-semibold hover:bg-green-500/20 transition"
                               >
                                 Approve
                               </button>
@@ -4674,7 +5297,7 @@ export default function Admin() {
                                     review.id
                                   )
                                 }
-                                className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 px-4 py-2 text-sm font-semibold hover:bg-yellow-500/20 transition"
+                                className="rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 dark:text-yellow-300 px-4 py-2 text-sm font-semibold hover:bg-yellow-500/20 transition"
                               >
                                 Reject
                               </button>
@@ -4688,7 +5311,7 @@ export default function Admin() {
                                     review.id
                                   )
                                 }
-                                className="rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-300 px-4 py-2 text-sm font-semibold hover:bg-orange-500/20 transition"
+                                className="rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-300 px-4 py-2 text-sm font-semibold hover:bg-orange-500/20 transition"
                               >
                                 {normalizeBoolean(
                                   review.featured
@@ -4705,153 +5328,408 @@ export default function Admin() {
                                   review.id
                                 )
                               }
-                              className="rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 px-4 py-2 text-sm font-semibold hover:bg-red-500/20 transition"
+                              className={
+                                buttonDanger
+                              }
                             >
                               Delete
                             </button>
+
                           </div>
+
                         </div>
 
-                        <p className="text-xs text-gray-700 mt-5">
+                        <p className="text-xs text-text-muted mt-5">
                           Submitted:{" "}
                           {formatDate(
                             review.created_at
                           )}
                         </p>
+
                       </article>
                     );
                   }
                 )
               )}
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               GALLERY
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "gallery" && (
             <section>
-              <form
-                onSubmit={
-                  uploadGalleryImage
-                }
-                className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6 mb-6"
-              >
-                <div className="grid md:grid-cols-[1fr_250px_auto] gap-4 items-end">
-                  <Field label="Image">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) =>
-                        setGalleryFile(
-                          event
-                            .target
-                            .files?.[0] ||
-                            null
-                        )
-                      }
-                      className="w-full text-sm text-gray-400"
-                    />
-                  </Field>
 
-                  <Field label="Folder">
-                    <select
-                      value={
-                        selectedGalleryFolder
-                      }
-                      onChange={(event) =>
-                        setSelectedGalleryFolder(
-                          event
-                            .target
-                            .value
-                        )
+              {/* UPLOAD + CREATE FOLDER */}
+
+              <div className="grid xl:grid-cols-2 gap-6 mb-8">
+
+                <form
+                  onSubmit={
+                    uploadGalleryImage
+                  }
+                  className="rounded-2xl border border-border bg-surface p-6"
+                >
+
+                  <p className="text-orange-500 text-xs uppercase tracking-widest font-black">
+                    Gallery
+                  </p>
+
+                  <h2 className="text-xl font-black mt-1 mb-6">
+                    Upload Image
+                  </h2>
+
+                  <div className="space-y-4">
+
+                    <Field label="Image">
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) =>
+                          setGalleryFile(
+                            event.target.files?.[0] ||
+                              null
+                          )
+                        }
+                        className="w-full text-sm text-text-muted"
+                      />
+
+                    </Field>
+
+                    <Field label="Folder">
+
+                      <select
+                        value={
+                          selectedGalleryFolder
+                        }
+                        onChange={(event) =>
+                          setSelectedGalleryFolder(
+                            event.target.value
+                          )
+                        }
+                        className={
+                          inputClass
+                        }
+                      >
+
+                        <option value="">
+                          Default / No Folder
+                        </option>
+
+                        {gallery.map(
+                          (folder) => (
+                            <option
+                              key={
+                                folder.id
+                              }
+                              value={
+                                folder.id
+                              }
+                            >
+                              {
+                                folder.name
+                              }
+                            </option>
+                          )
+                        )}
+
+                      </select>
+
+                    </Field>
+
+                    <button
+                      type="submit"
+                      disabled={
+                        loading
                       }
                       className={
-                        inputClass
+                        buttonPrimary +
+                        " w-full"
                       }
                     >
-                      <option value="">
-                        Default
-                      </option>
+                      Upload Image
+                    </button>
 
-                      {gallery.map(
-                        (folder) => (
-                          <option
-                            key={
-                              folder.id
-                            }
-                            value={
-                              folder.id
-                            }
-                          >
-                            {folder.name ||
-                              folder.title ||
-                              `Folder ${folder.id}`}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </Field>
+                  </div>
 
-                  <button
-                    type="submit"
-                    disabled={
-                      loading
-                    }
-                    className={
-                      buttonPrimary
-                    }
-                  >
-                    Upload Image
-                  </button>
-                </div>
-              </form>
+                </form>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <form
+                  onSubmit={
+                    createGalleryFolder
+                  }
+                  className="rounded-2xl border border-border bg-surface p-6 h-fit"
+                >
+
+                  <p className="text-orange-500 text-xs uppercase tracking-widest font-black">
+                    Folder Management
+                  </p>
+
+                  <h2 className="text-xl font-black mt-1 mb-6">
+                    Create Gallery Folder
+                  </h2>
+
+                  <div className="space-y-4">
+
+                    <Field
+                      label="Folder Name"
+                      required
+                    >
+                      <input
+                        value={
+                          newFolderName
+                        }
+                        onChange={(event) =>
+                          setNewFolderName(
+                            event
+                              .target
+                              .value
+                          )
+                        }
+                        placeholder="Events"
+                        className={
+                          inputClass
+                        }
+                      />
+                    </Field>
+
+                    <button
+                      type="submit"
+                      disabled={
+                        loading
+                      }
+                      className={
+                        buttonPrimary +
+                        " w-full"
+                      }
+                    >
+                      Create Folder
+                    </button>
+
+                  </div>
+
+                </form>
+
+              </div>
+
+              {/* FOLDER LIST */}
+
+              <div className="space-y-5">
+
                 {gallery.length ===
                 0 ? (
-                  <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 rounded-2xl border border-gray-800 bg-[#0F172A] p-12 text-center text-gray-600">
-                    No gallery data found.
+                  <div className="rounded-2xl border border-border bg-surface p-12 text-center text-text-muted">
+                    No gallery folders found.
                   </div>
                 ) : (
                   gallery.map(
-                    (item) => (
-                      <div
-                        key={
-                          item.id
-                        }
-                        className="rounded-2xl border border-gray-800 bg-[#0F172A] p-5"
-                      >
-                        <h3 className="font-bold">
-                          {item.name ||
-                            item.title ||
-                            `Folder ${item.id}`}
-                        </h3>
+                    (folder) => {
 
-                        <p className="text-gray-500 text-sm mt-2">
-                          {safeArray(
-                            item.photos
-                          ).length}{" "}
-                          photos
-                        </p>
-                      </div>
-                    )
+                      const photos =
+                        safeArray(
+                          folder.photos
+                        );
+
+                      const open =
+                        Number(
+                          openGalleryFolder
+                        ) ===
+                        Number(
+                          folder.id
+                        );
+
+                      return (
+                        <div
+                          key={
+                            folder.id
+                          }
+                          className="rounded-2xl border border-border bg-surface overflow-hidden"
+                        >
+
+                          {/* CLICKABLE FOLDER */}
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOpenGalleryFolder(
+                                open
+                                  ? null
+                                  : folder.id
+                              )
+                            }
+                            className="w-full flex items-center justify-between gap-4 p-6 text-left hover:bg-bg transition"
+                          >
+
+                            <div>
+
+                              <div className="flex items-center gap-3">
+
+                                <span className="text-2xl">
+                                  📁
+                                </span>
+
+                                <div>
+
+                                  <h3 className="text-xl font-black">
+                                    {
+                                      folder.name ||
+                                      folder.title ||
+                                      `Folder ${folder.id}`
+                                    }
+                                  </h3>
+
+                                  <p className="text-sm text-text-muted mt-1">
+                                    {
+                                      photos.length
+                                    }{" "}
+                                    {photos.length ===
+                                    1
+                                      ? "photo"
+                                      : "photos"}
+                                  </p>
+
+                                </div>
+
+                              </div>
+
+                            </div>
+
+                            <div className="flex items-center gap-3">
+
+                              <span className="text-text-muted text-2xl">
+                                {open
+                                  ? "⌃"
+                                  : "⌄"}
+                              </span>
+
+                            </div>
+
+                          </button>
+
+                          {/* OPEN FOLDER */}
+
+                          {open && (
+                            <div className="border-t border-border p-6">
+
+                              <div className="flex items-center justify-between mb-5">
+
+                                <div>
+
+                                  <p className="text-xs uppercase tracking-wider text-orange-500 font-black">
+                                    Open Folder
+                                  </p>
+
+                                  <h4 className="text-lg font-black mt-1">
+                                    {
+                                      folder.name
+                                    }
+                                  </h4>
+
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    deleteGalleryFolder(
+                                      folder.id
+                                    )
+                                  }
+                                  className="text-red-500 hover:text-red-400 text-sm"
+                                >
+                                  Delete Folder
+                                </button>
+
+                              </div>
+
+                              {photos.length ===
+                              0 ? (
+                                <div className="rounded-xl border border-dashed border-border py-12 text-center text-text-muted">
+                                  This folder has no photos yet.
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+
+                                  {photos.map(
+                                    (photo) => (
+                                      <div
+                                        key={
+                                          photo.id
+                                        }
+                                        className="group rounded-2xl overflow-hidden border border-border bg-bg"
+                                      >
+
+                                        <div className="relative">
+
+                                          <img
+                                            src={
+                                              photo.image_url
+                                            }
+                                            alt={
+                                              photo.caption ||
+                                              folder.name ||
+                                              "MCI Gallery"
+                                            }
+                                            className="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"
+                                            loading="lazy"
+                                          />
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              deleteGalleryPhoto(
+                                                photo.id
+                                              )
+                                            }
+                                            className="absolute top-2 right-2 rounded-lg bg-black/70 text-white text-xs px-3 py-1.5 opacity-0 group-hover:opacity-100 transition"
+                                          >
+                                            Delete
+                                          </button>
+
+                                        </div>
+
+                                        {photo.caption && (
+                                          <p className="p-3 text-xs text-text-muted">
+                                            {
+                                              photo.caption
+                                            }
+                                          </p>
+                                        )}
+
+                                      </div>
+                                    )
+                                  )}
+
+                                </div>
+                              )}
+
+                            </div>
+                          )}
+
+                        </div>
+                      );
+                    }
                   )
                 )}
+
               </div>
+
             </section>
           )}
 
-          {/* ====================================================
+          {/* ==================================================
               SETTINGS
-          ==================================================== */}
+          ================================================== */}
 
           {activeTab ===
             "settings" && (
             <section className="max-w-xl">
-              <div className="rounded-2xl border border-gray-800 bg-[#0F172A] p-6">
+
+              <div className="rounded-2xl border border-border bg-surface p-6">
+
                 <p className="text-orange-500 text-xs uppercase tracking-widest font-black">
                   Security
                 </p>
@@ -4866,7 +5744,9 @@ export default function Admin() {
                   }
                   className="space-y-4"
                 >
+
                   <Field label="Current Password">
+
                     <input
                       type="password"
                       value={
@@ -4887,9 +5767,11 @@ export default function Admin() {
                         inputClass
                       }
                     />
+
                   </Field>
 
                   <Field label="New Password">
+
                     <input
                       type="password"
                       value={
@@ -4910,9 +5792,11 @@ export default function Admin() {
                         inputClass
                       }
                     />
+
                   </Field>
 
                   <Field label="Confirm New Password">
+
                     <input
                       type="password"
                       value={
@@ -4933,24 +5817,28 @@ export default function Admin() {
                         inputClass
                       }
                     />
+
                   </Field>
 
                   <button
                     type="submit"
-                    disabled={
-                      loading
-                    }
+                    disabled={loading}
                     className={
                       buttonPrimary
                     }
                   >
                     Change Password
                   </button>
+
                 </form>
+
               </div>
+
             </section>
           )}
+
         </main>
+
       </div>
     </div>
   );
