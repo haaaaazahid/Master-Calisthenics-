@@ -6,13 +6,13 @@ const Footer = () => {
       name: "Beverly Park",
       address:
         "PSZ Sports Arena, Opp. Gaurav Residency Phase 2, Beverly Park, Mira Road East, Maharashtra 401107",
-      mapsUrl: "https://maps.app.goo.gl/ksU97R9Zv3UtehXy7",
+      mapsUrl: "https://maps.app.goo.gl/gDF73hJeNsBQ5n3p9",
     },
     {
       name: "Kashimira",
       address:
         "Kashimira, Mira Road, Maharashtra",
-      mapsUrl: "https://maps.app.goo.gl/gDF73hJeNsBQ5n3p9",
+      mapsUrl: "https://maps.app.goo.gl/ksU97R9Zv3UtehXy7 ",
     },
   ];
 
