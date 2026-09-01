@@ -396,36 +396,39 @@ export default function Community() {
       {/* ======================================================
           HERO
       ======================================================= */}
+<section className="relative min-h-[65vh] md:min-h-[72vh] overflow-hidden">
+  <img
+    src="/Community.jpeg"
+    alt="Master Calisthenics India community"
+    className="absolute inset-0 w-full h-full object-cover"
+    loading="eager"
+  />
 
-      <section
-        className="h-[70vh] bg-cover bg-center relative flex items-center justify-center"
-        style={{
-          backgroundImage:
-            "url('/src/assets/community.jpg')",
-        }}
-      >
+  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/80" />
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-bg" />
+  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-bg to-transparent" />
 
-        <div className="relative z-10 text-center px-6">
+  <div className="relative z-10 min-h-[65vh] md:min-h-[72vh] flex items-end">
+    <div className="w-full max-w-7xl mx-auto px-6 pb-14 md:pb-20">
 
-          <p className="text-orange-500 uppercase tracking-[0.3em] text-sm font-semibold mb-4">
-            Mira Road's Strongest Community
-          </p>
+      <p className="text-white uppercase tracking-[0.3em] text-sm font-semibold mb-5">
+        Mira Road's Strongest Community
+      </p>
 
-          <h1 className="text-6xl md:text-8xl font-black mb-6 leading-tight">
-            THE COMMUNITY
-          </h1>
+      <h1 className="text-white text-5xl sm:text-6xl md:text-8xl font-black leading-[0.95] tracking-tight">
+        THE
+        <br />
+        COMMUNITY
+      </h1>
 
-          <p className="text-text-muted text-xl max-w-2xl mx-auto leading-relaxed">
-            More than fitness. A brotherhood of discipline,
-            strength and transformation.
-          </p>
+      <p className="text-white/85 text-lg md:text-xl max-w-2xl mt-7 leading-relaxed">
+        More than fitness. A community built on discipline,
+        strength, friendship, and transformation.
+      </p>
 
-        </div>
-
-      </section>
-
+    </div>
+  </div>
+</section>
 
       {/* ======================================================
           PILLARS
