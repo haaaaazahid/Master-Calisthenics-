@@ -478,7 +478,8 @@ export default function Admin() {
   ========================================================== */
 
   const GOOGLE_CLIENT_ID =
-    import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  "884795861510-pf6h5obqhf35cjpfq3ebicqg75f53kbm.apps.googleusercontent.com";
 
   const googleInitializedRef =
     useRef(false);
