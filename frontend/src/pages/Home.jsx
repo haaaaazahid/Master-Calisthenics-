@@ -206,15 +206,7 @@ export default function Home() {
             </Link>
           </motion.div>
         </div>
-
-        {/* SCROLL INDICATOR */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce opacity-70">
-          <div className="w-0.5 h-8 bg-white/50 rounded-full" />
-          <div className="text-xs text-white/70 uppercase tracking-widest">
-            Scroll
-          </div>
-        </div>
-      </section>
+        </section>
 
       {/* =========================================================
           STATS
@@ -1042,6 +1034,7 @@ export default function Home() {
     </main>
   );
 }
+
 
 
 
