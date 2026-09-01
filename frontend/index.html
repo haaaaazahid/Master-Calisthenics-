@@ -2,28 +2,54 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/svg+xml" href="/mci.jpg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
     <title>Master Calisthenics India | Strength. Skill. Community.</title>
-    <meta name="description" content="Premium calisthenics coaching in Mumbai. Group training, personal training, and kids fitness — book a free trial today." />
+
+    <meta
+      name="description"
+      content="Premium calisthenics coaching in Mumbai. Group training, personal training, and kids fitness — book a free trial today."
+    />
+
+    <!-- MCI Favicon -->
+    <link rel="icon" type="image/x-icon" href="/mci.ico" />
+    <link rel="shortcut icon" href="/mci.ico" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Prevent theme flash before React mounts -->
     <script>
-      // Runs before React mounts, so the correct theme class is on <html>
-      // for the very first paint — prevents a dark-mode flash on load.
       (function () {
         try {
           var stored = localStorage.getItem("mci-theme");
           var theme = stored || "light";
-          if (theme === "dark") document.documentElement.classList.add("dark");
-        } catch (e) {}
+
+          if (theme === "dark") {
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+          }
+        } catch (e) {
+          // Ignore localStorage errors
+        }
       })();
     </script>
   </head>
+
   <body>
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
