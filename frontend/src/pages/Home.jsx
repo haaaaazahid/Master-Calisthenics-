@@ -67,7 +67,8 @@ export default function Home() {
                 .toLowerCase()
             )
             .filter(Boolean)
-        );`r`n        setTrainers(remote);
+        );
+        setTrainers(remote);
       })
       
   }, []);
@@ -1041,6 +1042,7 @@ export default function Home() {
     </main>
   );
 }
+
 
 
 
